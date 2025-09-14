@@ -1,4 +1,4 @@
-import { CRYPTOCOMPARE_API_KEY, validateConfig } from './config.js';
+import { getApiKey, getBaseUrl, validateConfig } from './config.js';
 
 // Note: validateConfig() is not called automatically here to avoid module loading issues
 // It will be called when needed or can be called manually
@@ -6,14 +6,16 @@ import { CRYPTOCOMPARE_API_KEY, validateConfig } from './config.js';
 // Makes requests to CryptoCompare API
 export async function makeApiRequest(path) {
     try {
-        const url = new URL(`https://min-api.cryptocompare.com/${path}`);
+        const baseUrl = getBaseUrl();
+        const apiKey = getApiKey();
+        const url = new URL(`${baseUrl}${path}`);
         
         // Only append API key if it's available
-        if (CRYPTOCOMPARE_API_KEY) {
-            url.searchParams.append('api_key', CRYPTOCOMPARE_API_KEY);
+        if (apiKey) {
+            url.searchParams.append('api_key', apiKey);
             console.log('🔑 [makeApiRequest]: Using API key');
         } else {
-            console.warn('⚠️ [makeApiRequest]: CRYPTOCOMPARE_API_KEY not configured. API calls may be rate limited.');
+            console.warn('⚠️ [makeApiRequest]: API key not configured. API calls may be rate limited.');
         }
         
         console.log('🌐 [makeApiRequest]: Making request to:', url.toString());

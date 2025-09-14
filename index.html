@@ -18,10 +18,24 @@
         <script>
             // This will run after load-env.js
             setTimeout(() => {
-                if (!window.env || !window.env.CRYPTOCOMPARE_API_KEY) {
+                if (!window.env || !window.env.PROVIDER_CONFIG) {
                     console.log('⚠️ No .env file found, using fallback configuration');
                     window.env = {
-                        CRYPTOCOMPARE_API_KEY: 'e459128e835fcf1a73fdd58a89bedabf6efcb788838ebc612a613bb5166f8cc1',
+                        PROVIDER: 'cryptocompare',
+                        PROVIDER_CONFIG: {
+                            cryptocompare: {
+                                apiKey: 'e459128e835fcf1a73fdd58a89bedabf6efcb788838ebc612a613bb5166f8cc1',
+                                baseUrl: 'https://min-api.cryptocompare.com/',
+                                wsUrl: 'wss://streamer.cryptocompare.com/v2'
+                            },
+                            mt5: {
+                                apiKey: '',
+                                baseUrl: '',
+                                wsUrl: ''
+                            }
+                        },
+                        TRADINGVIEW_DEFAULT_SYMBOL: 'Bitfinex:BTC/USDT',
+                        TRADINGVIEW_DEFAULT_INTERVAL: '1D',
                         DEBUG_MODE: 'true'
                     };
                 }
@@ -30,7 +44,7 @@
         </script>
 
         <!-- Custom datafeed module -->
-        <script type="module" src="src/main.js"></script>
+        <script type="module" src="src/core/main.js"></script>
     </head>
 
     <body style="margin:0px;">

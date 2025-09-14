@@ -1,13 +1,17 @@
 /* global WebSocket */
-import { CRYPTOCOMPARE_API_KEY } from './config.js';
+import { getApiKey, getWebSocketUrl } from './config.js';
 import { parseFullSymbol } from './helpers.js';
 
 let socket = null;
 
-console.log('🔑 [streaming]: Using API key:', CRYPTOCOMPARE_API_KEY);
+const apiKey = getApiKey();
+const wsBaseUrl = getWebSocketUrl();
 
-// Create WebSocket using the exact format from your working code
-const wsUrl = `wss://streamer.cryptocompare.com/v2?api_key=${CRYPTOCOMPARE_API_KEY}`;
+console.log('🔑 [streaming]: Using API key:', apiKey);
+console.log('🔌 [streaming]: WebSocket base URL:', wsBaseUrl);
+
+// Create WebSocket using the configured URL and API key
+const wsUrl = `${wsBaseUrl}?api_key=${apiKey}`;
 console.log('🔌 [streaming]: Connecting to WebSocket:', wsUrl);
 socket = new WebSocket(wsUrl);
 const channelToSubscription = new Map();
