@@ -1,0 +1,170 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradingView - Custom Datafeed Example</title>
+
+    <script src="charting_library_cloned_data/charting_library/charting_library.standalone.js"></script>
+</head>
+<body>
+    <div id="chartContainer" style="height: 100vh; width: 100vw;"></div>
+
+    <script>
+        // Simple custom datafeed implementation
+        const customDatafeed = {
+            onReady: (callback) => {
+                console.log('[Custom Datafeed] onReady called');
+                setTimeout(() => callback({
+                    supported_resolutions: ['5', '15','30','60','1D', '1W', '1M'],
+                    exchanges: [{
+                        value: 'Bitfinex',
+                        name: 'Bitfinex',
+                        desc: 'Bitfinex Exchange',
+                    }],
+                    symbols_types: [{
+                        name: 'crypto',
+                        value: 'crypto',
+                    }],
+                }), 0);
+            },
+
+            searchSymbols: (userInput, exchange, symbolType, onResultReadyCallback) => {
+                console.log('[Custom Datafeed] searchSymbols called');
+                const symbols = [
+                    {
+                        symbol: 'BTC/USDT',
+                        full_name: 'Bitfinex:BTC/USDT',
+                        description: 'Bitcoin / Tether',
+                        exchange: 'Bitfinex',
+                        type: 'crypto',
+                    },
+                    {
+                        symbol: 'ETH/USDT',
+                        full_name: 'Bitfinex:ETH/USDT',
+                        description: 'Ethereum / Tether',
+                        exchange: 'Bitfinex',
+                        type: 'crypto',
+                    }
+                ];
+                const filteredSymbols = symbols.filter(symbol => 
+                    symbol.full_name.toLowerCase().includes(userInput.toLowerCase())
+                );
+                onResultReadyCallback(filteredSymbols);
+            },
+
+            resolveSymbol: (symbolName, onSymbolResolvedCallback, onResolveErrorCallback) => {
+                console.log('[Custom Datafeed] resolveSymbol called for:', symbolName);
+                
+                const symbolInfo = {
+                    ticker: symbolName,
+                    name: symbolName.split(':')[1] || symbolName,
+                    description: 'Cryptocurrency pair',
+                    type: 'crypto',
+                    session: '24x7',
+                    timezone: 'Etc/UTC',
+                    exchange: 'Bitfinex',
+                    minmov: 1,
+                    pricescale: 100,
+                    has_intraday: false,
+                    has_no_volume: false,
+                    has_weekly_and_monthly: true,
+                    supported_resolutions: ['5', '15','30','60','1D', '1W', '1M'],
+                    volume_precision: 2,
+                    data_status: 'streaming',
+                };
+
+                onSymbolResolvedCallback(symbolInfo);
+            },
+
+            getBars: async (symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback) => {
+                console.log('[Custom Datafeed] getBars called');
+                const { from, to } = periodParams;
+                
+                // Generate mock data for demonstration
+                const bars = [];
+                const barCount = 100;
+                const timeStep = (to - from) / barCount;
+                
+                let basePrice = 105000; // Starting price for BTC
+                
+                for (let i = 0; i < barCount; i++) {
+                    const time = (from + i * timeStep) * 1000; // Convert to milliseconds
+                    const priceChange = (Math.random() - 0.5) * 1000;
+                    const open = basePrice + priceChange;
+                    const close = open + (Math.random() - 0.5) * 500;
+                    const high = Math.max(open, close) + Math.random() * 200;
+                    const low = Math.min(open, close) - Math.random() * 200;
+                    const volume = Math.random() * 1000;
+                    
+                    bars.push({
+                        time: time,
+                        open: open,
+                        high: high,
+                        low: low,
+                        close: close,
+                        volume: volume
+                    });
+                    
+                    basePrice = close; // Use close as next open
+                }
+                
+                console.log(`[Custom Datafeed] Returning ${bars.length} bars`);
+                onHistoryCallback(bars, { noData: false });
+            },
+
+            subscribeBars: (symbolInfo, resolution, onRealtimeCallback, subscriberUID, onResetCacheNeededCallback) => {
+                console.log('[Custom Datafeed] subscribeBars called');
+                // No real-time updates for this simple example
+            },
+
+            unsubscribeBars: (subscriberUID) => {
+                console.log('[Custom Datafeed] unsubscribeBars called');
+            }
+        };
+
+        // Wait for TradingView to be ready
+        function initializeChart() {
+            if (typeof TradingView === 'undefined') {
+                console.error('TradingView library not loaded');
+                setTimeout(initializeChart, 100);
+                return;
+            }
+
+            console.log('Initializing TradingView widget with custom datafeed...');
+
+            try {
+                new TradingView.widget({
+                    container: 'chartContainer',
+                    locale: 'en',
+                    library_path: 'charting_library_cloned_data/charting_library/',
+                    datafeed: customDatafeed,
+                    symbol: 'Bitfinex:BTC/USDT',
+                    interval: '1D',
+                    fullscreen: true,
+                    debug: true,
+                    theme: 'light',
+                    toolbar_bg: '#f1f3f6',
+                    overrides: {
+                        'mainSeriesProperties.style': 1,
+                        'mainSeriesProperties.candleStyle.upColor': '#26a69a',
+                        'mainSeriesProperties.candleStyle.downColor': '#ef5350',
+                        'mainSeriesProperties.candleStyle.borderUpColor': '#26a69a',
+                        'mainSeriesProperties.candleStyle.borderDownColor': '#ef5350',
+                        'mainSeriesProperties.candleStyle.wickUpColor': '#26a69a',
+                        'mainSeriesProperties.candleStyle.wickDownColor': '#ef5350'
+                    }
+                });
+                
+                console.log('✅ TradingView widget created successfully');
+            } catch (error) {
+                console.error('❌ Error creating TradingView widget:', error);
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', initializeChart);
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset = "UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TradingView - Advanced Charts</title>
+        <script src="charting_library_cloned_data/charting_library/charting_library.standalone.js"></script>
+        <script src="charting_library_cloned_data/datafeeds/udf/dist/bundle.js"></script>
+    </head>
+    <body>
+
+        <div id="chartContainer"></div>
+
+        <script>
+            new TradingView.widget({
+                container: 'chartContainer',
+                locale: 'en',
+                library_path: 'charting_library_cloned_data/charting_library/',
+                datafeed: new Datafeeds.UDFCompatibleDatafeed("https://demo-feed-data.tradingview.com"),
+                symbol: 'AAPL',
+                interval: '5',
+                fullscreen: true,
+                debug: true,
+            });
+        </script>
+    </body>
+</html>
