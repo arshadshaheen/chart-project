@@ -1,7 +1,7 @@
 import { CRYPTOCOMPARE_API_KEY, validateConfig } from './config.js';
 
-// Validate configuration on import
-validateConfig();
+// Note: validateConfig() is not called automatically here to avoid module loading issues
+// It will be called when needed or can be called manually
 
 // Makes requests to CryptoCompare API
 export async function makeApiRequest(path) {

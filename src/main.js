@@ -1,11 +1,14 @@
 // Datafeed implementation that you will add later
 import Datafeed from './datafeed.js';
-import { TRADINGVIEW_DEFAULT_SYMBOL, TRADINGVIEW_DEFAULT_INTERVAL, DEBUG_MODE } from './config.js';
+import { TRADINGVIEW_DEFAULT_SYMBOL, TRADINGVIEW_DEFAULT_INTERVAL, DEBUG_MODE, validateConfig } from './config.js';
 
 console.log('🔧 Configuration loaded:');
 console.log('TRADINGVIEW_DEFAULT_SYMBOL:', TRADINGVIEW_DEFAULT_SYMBOL);
 console.log('TRADINGVIEW_DEFAULT_INTERVAL:', TRADINGVIEW_DEFAULT_INTERVAL);
 console.log('DEBUG_MODE:', DEBUG_MODE);
+
+// Validate configuration now that everything is loaded
+validateConfig();
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {

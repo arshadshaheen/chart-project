@@ -11,6 +11,24 @@
             onerror="console.error('❌ Failed to load TradingView library script')">
         </script>
 
+        <!-- Load environment variables from .env file -->
+        <script src="load-env.js"></script>
+        
+        <!-- Fallback: Set API key directly if .env loading fails -->
+        <script>
+            // This will run after load-env.js
+            setTimeout(() => {
+                if (!window.env || !window.env.CRYPTOCOMPARE_API_KEY) {
+                    console.log('⚠️ No .env file found, using fallback configuration');
+                    window.env = {
+                        CRYPTOCOMPARE_API_KEY: 'e459128e835fcf1a73fdd58a89bedabf6efcb788838ebc612a613bb5166f8cc1',
+                        DEBUG_MODE: 'true'
+                    };
+                }
+                console.log('🔧 Final environment config:', window.env);
+            }, 100);
+        </script>
+
         <!-- Custom datafeed module -->
         <script type="module" src="src/main.js"></script>
     </head>

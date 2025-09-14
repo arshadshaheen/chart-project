@@ -6,7 +6,7 @@ const DEFAULT_CONFIG = {
     CRYPTOCOMPARE_API_KEY: '',
     TRADINGVIEW_DEFAULT_SYMBOL: 'Bitfinex:BTC/USDT',
     TRADINGVIEW_DEFAULT_INTERVAL: '1D',
-    DEBUG_MODE: 'false'
+    DEBUG_MODE: 'true'
 };
 
 // Function to load environment variables
@@ -28,6 +28,16 @@ function loadEnvironmentConfig() {
         Object.assign(config, window.localConfig);
     }
     
+    // Check if API key is set
+    if (config.CRYPTOCOMPARE_API_KEY && config.CRYPTOCOMPARE_API_KEY !== 'your_api_key_here') {
+        console.log('✅ [config]: API key is configured');
+    } else {
+        console.log('⚠️ [config]: No API key configured - chart will work but with rate limits');
+        console.log('📝 [config]: To add an API key:');
+        console.log('   1. Get a free key from: https://min-api.cryptocompare.com/');
+        console.log('   2. Add it to window.env.CRYPTOCOMPARE_API_KEY in your HTML');
+    }
+    
     return config;
 }
 
@@ -38,13 +48,22 @@ export const config = loadEnvironmentConfig();
 export function validateConfig() {
     const errors = [];
     
-    if (!config.CRYPTOCOMPARE_API_KEY) {
-        errors.push('CRYPTOCOMPARE_API_KEY is required');
+    // Check if config is loaded
+    if (!config) {
+        console.warn('⚠️ [validateConfig]: Config not yet loaded');
+        return false;
+    }
+    
+    if (!config.CRYPTOCOMPARE_API_KEY || config.CRYPTOCOMPARE_API_KEY === '') {
+        errors.push('CRYPTOCOMPARE_API_KEY is not configured');
     }
     
     if (errors.length > 0) {
-        console.warn('Configuration validation errors:', errors);
-        console.warn('Please check your environment configuration');
+        console.warn('⚠️ [validateConfig]: Configuration validation errors:', errors);
+        console.warn('📝 [validateConfig]: Chart will work but with limitations');
+        console.warn('📝 [validateConfig]: To fix: Add API key to window.env in your HTML');
+    } else {
+        console.log('✅ [validateConfig]: Configuration is valid');
     }
     
     return errors.length === 0;

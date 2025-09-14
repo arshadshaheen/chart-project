@@ -6,7 +6,7 @@ const lastBarsCache = new Map();
 // DatafeedConfiguration implementation
 const configurationData = {
     // Represents the resolutions for bars supported by your datafeed
-    supported_resolutions: ['1D', '1W', '1M'],
+    supported_resolutions: ['1','5', '15','30','60','1D', '1W', '1M'],
     // The `exchanges` arguments are used for the `searchSymbols` method if a user selects the exchange
     exchanges: [{
         value: 'Bitfinex',
@@ -110,7 +110,7 @@ export default {
             minmov: 1,
             pricescale: 100,
             has_intraday: false,
-            has_no_volume: true,
+            visible_plots_set: 'ohlcv', // Replaces deprecated has_no_volume
             has_weekly_and_monthly: false,
             supported_resolutions: configurationData.supported_resolutions,
             volume_precision: 2,
