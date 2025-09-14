@@ -1,7 +1,8 @@
-import { parseFullSymbol, apiKey } from './helpers.js';
+import { parseFullSymbol } from './helpers.js';
+import { CRYPTOCOMPARE_API_KEY } from './config.js';
 
 const socket = new WebSocket(
-    'wss://streamer.cryptocompare.com/v2?api_key=' + apiKey
+    'wss://streamer.cryptocompare.com/v2?api_key=' + CRYPTOCOMPARE_API_KEY
 );
 const channelToSubscription = new Map();
 

@@ -56,8 +56,12 @@ async function getAllSymbols() {
 
 export default {
     onReady: (callback) => {
-        console.log('[onReady]: Method call');
-        setTimeout(() => callback(configurationData));
+        console.log('[onReady]: Datafeed onReady called');
+        console.log('[onReady]: Configuration data:', configurationData);
+        setTimeout(() => {
+            console.log('[onReady]: Calling callback with configuration');
+            callback(configurationData);
+        }, 100);
     },
 
     searchSymbols: async (
@@ -119,8 +123,11 @@ export default {
 
     getBars: async (symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback) => {
         const { from, to, firstDataRequest } = periodParams;
-        console.log('[getBars]: Method call', symbolInfo, resolution, from, to);
+        console.log('📊 [getBars]: Method call', symbolInfo, resolution, from, to);
+        
         const parsedSymbol = parseFullSymbol(symbolInfo.full_name);
+        console.log('🔍 [getBars]: Parsed symbol:', parsedSymbol);
+        
         const urlParameters = {
             e: parsedSymbol.exchange,
             fsym: parsedSymbol.fromSymbol,
@@ -128,18 +135,25 @@ export default {
             toTs: to,
             limit: 2000,
         };
+        
         const query = Object.keys(urlParameters)
             .map(name => `${name}=${encodeURIComponent(urlParameters[name])}`)
             .join('&');
+            
+        console.log('🌐 [getBars]: Making API request:', `data/histoday?${query}`);
+        
         try {
             const data = await makeApiRequest(`data/histoday?${query}`);
+            console.log('✅ [getBars]: API response received:', data);
+            
             if (data.Response && data.Response === 'Error' || data.Data.length === 0) {
-                // "noData" should be set if there is no data in the requested period
+                console.log('⚠️ [getBars]: No data or error response');
                 onHistoryCallback([], {
                     noData: true,
                 });
                 return;
             }
+            
             let bars = [];
             data.Data.forEach(bar => {
                 if (bar.time >= from && bar.time < to) {
@@ -152,17 +166,19 @@ export default {
                     }];
                 }
             });
+            
             if (firstDataRequest) {
                 lastBarsCache.set(symbolInfo.full_name, {
                     ...bars[bars.length - 1],
                 });
             }
-            console.log(`[getBars]: returned ${bars.length} bar(s)`);
+            
+            console.log(`📈 [getBars]: returned ${bars.length} bar(s)`);
             onHistoryCallback(bars, {
                 noData: false,
             });
         } catch (error) {
-            console.log('[getBars]: Get error', error);
+            console.log('❌ [getBars]: Get error', error);
             onErrorCallback(error);
         }
     },

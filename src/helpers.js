@@ -11,14 +11,23 @@ export async function makeApiRequest(path) {
         // Only append API key if it's available
         if (CRYPTOCOMPARE_API_KEY) {
             url.searchParams.append('api_key', CRYPTOCOMPARE_API_KEY);
+            console.log('🔑 [makeApiRequest]: Using API key');
         } else {
-            console.warn('CRYPTOCOMPARE_API_KEY not configured. API calls may be rate limited.');
+            console.warn('⚠️ [makeApiRequest]: CRYPTOCOMPARE_API_KEY not configured. API calls may be rate limited.');
         }
         
+        console.log('🌐 [makeApiRequest]: Making request to:', url.toString());
+        
         const response = await fetch(url.toString());
-        return response.json();
+        console.log('📡 [makeApiRequest]: Response status:', response.status, response.statusText);
+        
+        const data = await response.json();
+        console.log('📊 [makeApiRequest]: Response data:', data);
+        
+        return data;
     } catch (error) {
-        throw new Error(`CryptoCompare request error: ${error.status}`);
+        console.error('❌ [makeApiRequest]: Request error:', error);
+        throw new Error(`CryptoCompare request error: ${error.status || error.message}`);
     }
 }
 
