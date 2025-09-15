@@ -1,162 +1,139 @@
-# TradingView Chart Project
+# TradingView Chart with Multi-Provider Support
 
-A TradingView Advanced Charts implementation with custom datafeed using CryptoCompare API.
+A TradingView charting library implementation with support for multiple data providers (CryptoCompare and MT5).
 
 ## 🚀 Quick Start
 
-### 1. Clone the Repository
-```bash
-git clone <your-repo-url>
-cd chart-project
-```
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
 
-### 2. Set Up Environment Variables
+### Installation
 
-Create a `.env` file in the project root:
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-```bash
-# Copy the example file
-cp env.example .env
-```
+2. **Configure environment variables:**
+   Create a `.env` file in the project root:
+   ```env
+   # Simplified Configuration
+   PROVIDER=mt5
+   PROVIDER_API_KEY=Bearer your_api_key_here
+   ```
+   
+   **Provider Options:**
+   - `PROVIDER=mt5` - Use MT5 provider (default)
+   - `PROVIDER=cryptocompare` - Use CryptoCompare provider
+   
+   **API Key Examples:**
+   - **MT5**: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+   - **CryptoCompare**: `your_cryptocompare_api_key`
 
-Edit the `.env` file with your actual API keys:
+3. **Start the server:**
+   ```bash
+   npm start
+   ```
 
-```env
-# CryptoCompare API Configuration
-CRYPTOCOMPARE_API_KEY=your_actual_api_key_here
-
-# TradingView Configuration
-TRADINGVIEW_DEFAULT_SYMBOL=Bitfinex:BTC/USDT
-TRADINGVIEW_DEFAULT_INTERVAL=1D
-
-# Development Settings
-DEBUG_MODE=true
-```
-
-### 3. Get Your CryptoCompare API Key
-
-1. Visit [CryptoCompare API](https://min-api.cryptocompare.com/)
-2. Sign up for a free account
-3. Get your API key from the dashboard
-4. Add it to your `.env` file
-
-### 4. Run the Project
-
-#### Option A: Development Version (with .env support)
-```bash
-# Serve the files using a local server
-python -m http.server 8000
-# or
-npx serve .
-# or
-php -S localhost:8000
-```
-
-Then open: `http://localhost:8000/index-dev.html`
-
-#### Option B: Production Version
-Open `index.html` directly in your browser (API key will need to be set in config.js)
+4. **Open your browser:**
+   Navigate to `http://localhost:3000`
 
 ## 📁 Project Structure
 
 ```
 chart-project/
 ├── src/
-│   ├── config.js          # Environment configuration
-│   ├── helpers.js         # API helpers and utilities
-│   ├── datafeed.js        # TradingView datafeed implementation
-│   ├── main.js           # Main application entry point
-│   └── streaming.js      # Real-time streaming functionality
-├── charting_library_cloned_data/  # TradingView library files
-├── index.html            # Production version
-├── index-dev.html        # Development version (with .env support)
-├── index2.html          # Demo version with UDF datafeed
-├── index-simple.html    # Simple version with mock data
-├── index-debug.html     # Debug version with logging
-├── load-env.js          # Environment variable loader
-├── env.example          # Environment variables template
-├── .gitignore           # Git ignore rules
-└── README.md           # This file
+│   ├── core/
+│   │   ├── config.js          # Configuration management
+│   │   └── main.js            # Main application entry
+│   └── providers/
+│       ├── index.js           # Provider factory
+│       ├── cryptocompare/     # CryptoCompare provider
+│       │   ├── index.js
+│       │   ├── datafeed.js
+│       │   ├── helpers.js
+│       │   ├── streaming.js
+│       │   └── config.js
+│       └── mt5/               # MT5 provider
+│           ├── index.js
+│           ├── datafeed.js
+│           ├── helpers.js
+│           ├── streaming.js
+│           └── config.js
+├── server.js                  # Node.js server
+├── package.json
+├── .env                       # Environment variables
+└── index.html                 # Main HTML file
 ```
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default |
+| Variable | Description | Example |
 |----------|-------------|---------|
-| `CRYPTOCOMPARE_API_KEY` | Your CryptoCompare API key | Required |
-| `TRADINGVIEW_DEFAULT_SYMBOL` | Default symbol to display | `Bitfinex:BTC/USDT` |
-| `TRADINGVIEW_DEFAULT_INTERVAL` | Default time interval | `1D` |
-| `DEBUG_MODE` | Enable debug logging | `false` |
+| `PROVIDER` | Active provider | `mt5` or `cryptocompare` |
+| `PROVIDER_API_KEY` | API key for the selected provider | `Bearer your_token` or `your_api_key` |
 
-### Supported Symbols
+**Note:** All other settings (URLs, symbols, intervals) are hardcoded in the provider configurations for simplicity.
 
-The datafeed supports symbols from these exchanges:
-- Bitfinex
-- Kraken
+### Provider Configuration
 
-Format: `Exchange:Symbol/Base` (e.g., `Bitfinex:BTC/USDT`)
+Each provider has its own configuration:
+- **API Key**: Authentication token
+- **Base URL**: REST API endpoint
+- **WebSocket URL**: Real-time data endpoint
 
-### Supported Resolutions
+## 🌐 API Endpoints
 
-- Daily: `1D`
-- Weekly: `1W` 
-- Monthly: `1M`
+- `GET /` - Serves the main chart application
+- `GET /api/config` - Returns current configuration
 
-## 🔒 Security
+## 🔌 Supported Providers
 
-- **Never commit your `.env` file** to version control
-- The `.gitignore` file is configured to exclude sensitive files
-- Use `env.example` as a template for other developers
+### CryptoCompare
+- **Data**: Historical and real-time cryptocurrency data
+- **Authentication**: API key
+- **WebSocket**: Real-time price updates
+
+### MT5
+- **Data**: Forex and CFD data via MT5 API
+- **Authentication**: Bearer token
+- **WebSocket**: Real-time tick data via Socket.IO
 
 ## 🛠️ Development
 
-### Adding New Symbols
-
-1. Update the `getAllSymbols()` function in `src/datafeed.js`
-2. Add the new exchange/symbol to the configuration
-
-### Customizing the Chart
-
-Modify the TradingView widget configuration in `src/main.js`:
-
-```javascript
-window.tvWidget = new TradingView.widget({
-    symbol: TRADINGVIEW_DEFAULT_SYMBOL,
-    interval: TRADINGVIEW_DEFAULT_INTERVAL,
-    // ... other options
-});
+### Running in Development Mode
+```bash
+npm run dev
 ```
 
-## 📊 Features
+### Adding New Providers
 
-- ✅ Custom CryptoCompare datafeed
-- ✅ Real-time data streaming
-- ✅ Multiple time resolutions
-- ✅ Symbol search functionality
-- ✅ Environment variable configuration
-- ✅ Debug mode with logging
-- ✅ Multiple deployment options
+1. Create a new provider directory in `src/providers/`
+2. Implement the required modules:
+   - `index.js` - Provider definition
+   - `datafeed.js` - Historical data
+   - `helpers.js` - Utility functions
+   - `streaming.js` - Real-time data
+   - `config.js` - Provider configuration
+
+3. Add the provider to `src/providers/index.js`
+4. Update the server configuration in `server.js`
 
 ## 🐛 Troubleshooting
 
-### Chart Not Loading
-1. Check browser console for errors
-2. Verify your API key is correctly set
-3. Ensure you're using a local server (not file:// protocol)
+### Common Issues
 
-### API Rate Limits
-- Free CryptoCompare accounts have rate limits
-- Consider upgrading for higher limits
-- The datafeed includes error handling for rate limits
+1. **Chart not loading**: Check browser console for errors
+2. **No data**: Verify API keys and provider configuration
+3. **WebSocket errors**: Check WebSocket URLs and authentication
 
-### Environment Variables Not Loading
-1. Ensure `.env` file exists in project root
-2. Check file permissions
-3. Use `index-dev.html` for development
+### Debug Mode
+
+Enable debug mode by setting `DEBUG_MODE=true` in your `.env` file to see detailed logging.
 
 ## 📝 License
 
-This project is for educational purposes. Please respect TradingView's and CryptoCompare's terms of service.
-"# chart-project" 
+MIT License

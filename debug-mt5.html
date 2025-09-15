@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MT5 Datafeed Debug</title>
+</head>
+<body>
+    <h1>MT5 Datafeed Debug</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        import { config, getCurrentProvider, getCurrentProviderConfig } from './src/core/config.js';
+        import { getActiveProvider } from './src/providers/index.js';
+        
+        console.log('🔧 Configuration:');
+        console.log('Provider:', getCurrentProvider());
+        console.log('Config:', config);
+        console.log('Provider Config:', getCurrentProviderConfig());
+        
+        try {
+            const provider = await getActiveProvider();
+            console.log('🔌 Provider loaded:', provider);
+            console.log('🔌 Datafeed:', provider.datafeed);
+            
+            // Test the datafeed functions
+            if (provider.datafeed) {
+                console.log('📊 Testing datafeed...');
+                
+                // Test onReady
+                provider.datafeed.onReady(() => {
+                    console.log('✅ Datafeed onReady called');
+                });
+                
+                // Test resolveSymbol
+                const symbolInfo = {
+                    full_name: 'EURUSD.s',
+                    name: 'EURUSD.s',
+                    description: 'EURUSD',
+                    type: 'forex',
+                    session: '24x7',
+                    timezone: 'Etc/UTC',
+                    ticker: 'EURUSD.s',
+                    exchange: 'MT5',
+                    minmov: 1,
+                    pricescale: 100000,
+                    has_intraday: true,
+                    has_weekly_and_monthly: true,
+                    supported_resolutions: ['1', '5', '15', '30', '60', '240', '1D', '1W', '1M'],
+                    volume_precision: 2,
+                    data_status: 'streaming'
+                };
+                
+                provider.datafeed.resolveSymbol(symbolInfo, (symbolInfo) => {
+                    console.log('✅ Symbol resolved:', symbolInfo);
+                });
+                
+                // Test getBars
+                const barsCallback = (bars, meta) => {
+                    console.log('✅ Bars received:', bars?.length, 'bars');
+                    console.log('✅ Meta:', meta);
+                };
+                
+                const errorCallback = (error) => {
+                    console.error('❌ Error getting bars:', error);
+                };
+                
+                provider.datafeed.getBars(
+                    symbolInfo,
+                    '1D',
+                    { from: Math.floor(Date.now() / 1000) - 86400 * 30, to: Math.floor(Date.now() / 1000) },
+                    barsCallback,
+                    errorCallback
+                );
+            }
+            
+        } catch (error) {
+            console.error('❌ Error loading provider:', error);
+        }
+        
+        document.getElementById('output').innerHTML = `
+            <h2>Debug Results:</h2>
+            <p><strong>Provider:</strong> ${getCurrentProvider()}</p>
+            <p><strong>API Key:</strong> ${getCurrentProviderConfig().apiKey ? 'Configured' : 'Missing'}</p>
+            <p><strong>Base URL:</strong> ${getCurrentProviderConfig().baseUrl}</p>
+            <p><strong>Default Symbol:</strong> ${config.TRADINGVIEW_DEFAULT_SYMBOL}</p>
+            <p><strong>Default Interval:</strong> ${config.TRADINGVIEW_DEFAULT_INTERVAL}</p>
+            <p>Check console for detailed logs...</p>
+        `;
+    </script>
+</body>
+</html>

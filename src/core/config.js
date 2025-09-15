@@ -1,81 +1,49 @@
 // Core configuration for the TradingView chart project
-// This file handles loading environment variables and provider configuration
+// All configuration is hardcoded here for simplicity
 
-// Default configuration values
-const DEFAULT_CONFIG = {
-    // Provider configuration
-    PROVIDER: 'cryptocompare', // Default provider
-    PROVIDER_CONFIG: {
-        cryptocompare: {
-            apiKey: '',
-            baseUrl: 'https://min-api.cryptocompare.com/',
-            wsUrl: 'wss://streamer.cryptocompare.com/v2'
-        },
-        mt5: {
-            apiKey: '',
-            baseUrl: '', // Will be set when MT5 is implemented
-            wsUrl: '' // Will be set when MT5 is implemented
-        }
-    },
-    
-    // TradingView configuration
-    TRADINGVIEW_DEFAULT_SYMBOL: 'Bitfinex:BTC/USDT',
-    TRADINGVIEW_DEFAULT_INTERVAL: '1D',
-    DEBUG_MODE: 'true'
+// Provider configuration - Change this to switch providers
+const PROVIDER = 'mt5'; // Options: 'mt5' or 'cryptocompare'
+
+// API Keys - Set your API keys here
+const API_KEYS = {
+    mt5: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAwMTQzNSwicm9sZSI6eyJpZCI6MiwibmFtZSI6IkNsaWVudCIsImFwcE5hbWUiOiJjbGllbnQgcG9ydGFsIiwiZGVzY3JpcHRpb24iOm51bGwsImRlZmF1bHREYXNoYm9hcmQiOiJHZW5lcmFsIERhc2hib2FyZCIsImRhc2hib2FyZElkIjoxMDIsImlzUmVhZE9ubHkiOnRydWUsImRlcGFydG1lbnRJZCI6bnVsbCwiaXNIaWRkZW4iOnRydWUsImNhblNlZUVtYWlsIjp0cnVlLCJjYW5TZWVQaG9uZU51bWJlciI6dHJ1ZSwic2VlT3RoZXJDb25maWRlbnRpYWxEYXRhIjp0cnVlLCJjbG9uZWRGcm9tIjpudWxsLCJpc0FjdGl2ZSI6dHJ1ZSwiY3JlYXRlZEF0IjoiMjAyNC0wNS0yN1QxMjozMjo1Ni4wOTdaIiwidXBkYXRlZEF0IjoiMjAyNC0wNi0yM1QxNTowODowMi42NDBaIiwiX19lbnRpdHkiOiJSb2xlIn0sImxhbmd1YWdlSXNvIjoiRU4iLCJzZXNzaW9uSWQiOjc0NTksImVtYWlsIjoiaGFuYW4uYSt0ZXlzeTFzdEBnYXRlc28uY29tIiwiaWF0IjoxNzU3OTE4NjMzLCJleHAiOjE3NTgwMDUwMzN9.cWu74KVvFQYTpJ-QmyokYmAv6BsnX5mZ3crWQh3JaFU',
+    cryptocompare: 'e459128e835fcf1a73fdd58a89bedabf6efcb788838ebc612a613bb5166f8cc1'
 };
 
-// Function to load environment variables
-function loadEnvironmentConfig() {
-    const config = { ...DEFAULT_CONFIG };
-    
-    // Try to load from window.env (set by a build process or script)
-    if (typeof window !== 'undefined' && window.env) {
-        Object.assign(config, window.env);
+// Provider configurations with hardcoded values
+const PROVIDER_CONFIG = {
+    cryptocompare: {
+        apiKey: API_KEYS.cryptocompare,
+        baseUrl: 'https://min-api.cryptocompare.com/',
+        wsUrl: 'wss://streamer.cryptocompare.com/v2',
+        defaultSymbol: 'Bitfinex:BTC/USDT',
+        defaultInterval: '1D'
+    },
+    mt5: {
+        apiKey: API_KEYS.mt5,
+        baseUrl: 'http://localhost:3000',
+        wsUrl: 'wss://live-mt5-sockets-staging.naqdi.com',
+        defaultSymbol: 'EURUSD.s',
+        defaultInterval: '1D'
     }
-    
-    // Try to load from process.env (if available in build environment)
-    if (typeof process !== 'undefined' && process.env) {
-        Object.assign(config, process.env);
-    }
-    
-    // For development, you can also check for a local config
-    if (typeof window !== 'undefined' && window.localConfig) {
-        Object.assign(config, window.localConfig);
-    }
-    
-    // Check if provider is configured
-    const currentProvider = config.PROVIDER;
-    const providerConfig = config.PROVIDER_CONFIG[currentProvider];
-    
-    if (providerConfig && providerConfig.apiKey && providerConfig.apiKey !== '') {
-        console.log(`✅ [config]: ${currentProvider} provider configured`);
-    } else {
-        console.log(`⚠️ [config]: No API key configured for ${currentProvider} provider`);
-        console.log('📝 [config]: To add an API key:');
-        if (currentProvider === 'cryptocompare') {
-            console.log('   1. Get a free key from: https://min-api.cryptocompare.com/');
-            console.log('   2. Add it to PROVIDER_CONFIG.cryptocompare.apiKey in your HTML');
-        } else {
-            console.log(`   1. Configure API key for ${currentProvider} provider`);
-            console.log(`   2. Add it to PROVIDER_CONFIG.${currentProvider}.apiKey in your HTML`);
-        }
-    }
-    
-    return config;
-}
+};
 
-// Load the configuration
-export const config = loadEnvironmentConfig();
+// Get the active provider configuration
+const activeProviderConfig = PROVIDER_CONFIG[PROVIDER];
+
+// Final configuration object
+const config = {
+    PROVIDER: PROVIDER,
+    PROVIDER_API_KEY: API_KEYS[PROVIDER],
+    TRADINGVIEW_DEFAULT_SYMBOL: activeProviderConfig.defaultSymbol,
+    TRADINGVIEW_DEFAULT_INTERVAL: activeProviderConfig.defaultInterval,
+    DEBUG_MODE: 'true',
+    PROVIDER_CONFIG: PROVIDER_CONFIG
+};
 
 // Validation function
 export function validateConfig() {
     const errors = [];
-    
-    // Check if config is loaded
-    if (!config) {
-        console.warn('⚠️ [validateConfig]: Config not yet loaded');
-        return false;
-    }
     
     // Validate provider configuration
     const currentProvider = config.PROVIDER;
@@ -100,7 +68,7 @@ export function validateConfig() {
     if (errors.length > 0) {
         console.warn('⚠️ [validateConfig]: Configuration validation errors:', errors);
         console.warn('📝 [validateConfig]: Chart will work but with limitations');
-        console.warn('📝 [validateConfig]: To fix: Configure provider settings in your HTML');
+        console.warn('📝 [validateConfig]: To fix: Update API keys in src/core/config.js');
     } else {
         console.log('✅ [validateConfig]: Configuration is valid');
     }
@@ -108,30 +76,22 @@ export function validateConfig() {
     return errors.length === 0;
 }
 
-// Export individual config values for convenience
-export const {
-    PROVIDER,
-    PROVIDER_CONFIG,
-    TRADINGVIEW_DEFAULT_SYMBOL,
-    TRADINGVIEW_DEFAULT_INTERVAL,
-    DEBUG_MODE
-} = config;
+// Helper functions
+export function getCurrentProvider() {
+    return config.PROVIDER;
+}
+
+export function getCurrentProviderConfig() {
+    return config.PROVIDER_CONFIG[config.PROVIDER] || {};
+}
+
+export function getProviderConfig(providerName) {
+    return config.PROVIDER_CONFIG[providerName] || {};
+}
 
 // Backward compatibility exports
 export const CRYPTOCOMPARE_API_KEY = config.PROVIDER_CONFIG?.cryptocompare?.apiKey || '';
 
-// Helper functions
-export function getCurrentProvider() {
-    return PROVIDER;
-}
-
-export function getCurrentProviderConfig() {
-    return PROVIDER_CONFIG[PROVIDER] || {};
-}
-
-export function getProviderConfig(providerName) {
-    return PROVIDER_CONFIG[providerName] || {};
-}
-
 // Export the config object
+export { config };
 export default config;

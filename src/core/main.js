@@ -1,9 +1,7 @@
 // Main application entry point with provider-based architecture
-import { getProvider } from '../providers/index.js';
+import { getActiveProvider } from '../providers/index.js';
 import { 
-    TRADINGVIEW_DEFAULT_SYMBOL, 
-    TRADINGVIEW_DEFAULT_INTERVAL, 
-    DEBUG_MODE, 
+    config,
     validateConfig,
     getCurrentProvider,
     getCurrentProviderConfig
@@ -12,20 +10,20 @@ import {
 console.log('🔧 Configuration loaded:');
 console.log('Current Provider:', getCurrentProvider());
 console.log('Provider Config:', getCurrentProviderConfig());
-console.log('TRADINGVIEW_DEFAULT_SYMBOL:', TRADINGVIEW_DEFAULT_SYMBOL);
-console.log('TRADINGVIEW_DEFAULT_INTERVAL:', TRADINGVIEW_DEFAULT_INTERVAL);
-console.log('DEBUG_MODE:', DEBUG_MODE);
+console.log('TRADINGVIEW_DEFAULT_SYMBOL:', config.TRADINGVIEW_DEFAULT_SYMBOL);
+console.log('TRADINGVIEW_DEFAULT_INTERVAL:', config.TRADINGVIEW_DEFAULT_INTERVAL);
+console.log('DEBUG_MODE:', config.DEBUG_MODE);
 
-// Validate configuration now that everything is loaded
+// Validate configuration immediately
 validateConfig();
 
 // Wait for DOM to be ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('📄 DOM Content Loaded');
     console.log('TradingView available:', typeof TradingView !== 'undefined');
     
     // Wait a bit more for TradingView library to be fully loaded
-    setTimeout(() => {
+    setTimeout(async () => {
         console.log('⏰ Timeout reached, checking TradingView library...');
         console.log('TradingView available:', typeof TradingView !== 'undefined');
         
@@ -36,22 +34,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         console.log('✅ TradingView library found, creating widget...');
+        console.log('🔧 Current config:', config);
         
         try {
             // Get the configured provider
-            const provider = getProvider(getCurrentProvider());
+            const provider = await getActiveProvider();
             console.log('🔌 Using provider:', provider.name);
+            console.log('🔌 Provider datafeed:', provider.datafeed);
             
             // Create the TradingView widget with provider-specific datafeed
             window.tvWidget = new TradingView.widget({
-                symbol: TRADINGVIEW_DEFAULT_SYMBOL,       // Default symbol pair with exchange
-                interval: TRADINGVIEW_DEFAULT_INTERVAL,   // Default interval
+                symbol: config.TRADINGVIEW_DEFAULT_SYMBOL,       // Default symbol pair with exchange
+                interval: config.TRADINGVIEW_DEFAULT_INTERVAL,   // Default interval
                 fullscreen: true,                        // Displays the chart in the fullscreen mode
                 container: 'tv_chart_container',         // Reference to an attribute of a DOM element
                 datafeed: provider.datafeed,             // Provider-specific datafeed
                 library_path: './charting_library_cloned_data/charting_library/', // Fixed path
                 locale: 'en',
-                debug: DEBUG_MODE === 'true',
+                debug: config.DEBUG_MODE === 'true',
                 disabled_features: [
                     'use_localstorage_for_settings',
                     'volume_force_overlay',
