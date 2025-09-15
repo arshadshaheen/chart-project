@@ -79,8 +79,20 @@ export function getMt5Config() {
         authType: 'bearer_token',
         timeout: config.timeout || 10000,
         retries: config.retries || 3,
-        retryDelay: config.retryDelay || 1000
+        retryDelay: config.retryDelay || 1000,
+        // Timezone offset in milliseconds (negative = subtract hours, positive = add hours)
+        // Default: -1 hour to convert from UTC+1 to UTC
+        timezoneOffset: config.timezoneOffset || (-1 * 60 * 60 * 1000)
     };
+}
+
+/**
+ * Get timezone offset for real-time data conversion
+ * @returns {number} Timezone offset in milliseconds
+ */
+export function getTimezoneOffset() {
+    const config = getMt5Config();
+    return config.timezoneOffset;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { makeApiRequest, generateSymbol, parseFullSymbol, getSymbolPrecision } from './helpers.js';
 import { subscribeOnStream, unsubscribeFromStream } from './streaming.js';
+import { getTimezoneOffset } from './config.js';
 
 const lastBarsCache = new Map();
 
@@ -81,11 +82,20 @@ const Datafeed = {
     getBars: async (symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback) => {
         const { from, to, firstDataRequest } = periodParams;
         console.log('[MT5 Datafeed]: getBars called', symbolInfo, resolution, from, to);
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeToCurrent = currentTime - to;
+        
         console.log('[MT5 Datafeed]: Timestamp details:', {
             from: from,
             to: to,
-            fromDate: new Date(from * 1000),
-            toDate: new Date(to * 1000),
+            fromDate: new Date(from * 1000).toISOString(),
+            toDate: new Date(to * 1000).toISOString(),
+            timeRange: `${to - from} seconds (${Math.round((to - from) / 3600)} hours)`,
+            currentTime: new Date().toISOString(),
+            currentTimeSeconds: currentTime,
+            timeToCurrentSeconds: timeToCurrent,
+            timeToCurrentMinutes: Math.round(timeToCurrent / 60),
+            isRequestingFuture: timeToCurrent < 0 ? 'YES - requesting future data!' : 'NO',
             firstDataRequest: firstDataRequest
         });
 
@@ -133,6 +143,30 @@ const Datafeed = {
             });
 
             console.log('[MT5 Datafeed]: API response received:', data);
+            
+            // Debug the actual data range returned
+            if (data.result && data.result.answer && data.result.answer.length > 0) {
+                const firstBar = data.result.answer[0];
+                const lastBar = data.result.answer[data.result.answer.length - 1];
+                const requestedFrom = fromTimestamp;
+                const requestedTo = toTimestamp;
+                
+                console.log('[MT5 Datafeed]: Data range analysis:', {
+                    requestedFrom: requestedFrom,
+                    requestedTo: requestedTo,
+                    requestedFromDate: new Date(requestedFrom * 1000).toISOString(),
+                    requestedToDate: new Date(requestedTo * 1000).toISOString(),
+                    actualFirstBar: firstBar[0],
+                    actualLastBar: lastBar[0],
+                    actualFirstBarDate: new Date(firstBar[0] * 1000).toISOString(),
+                    actualLastBarDate: new Date(lastBar[0] * 1000).toISOString(),
+                    totalBars: data.result.answer.length,
+                    gapFromRequestedStart: firstBar[0] - requestedFrom,
+                    gapToRequestedEnd: requestedTo - lastBar[0],
+                    gapToRequestedEndSeconds: requestedTo - lastBar[0],
+                    gapToRequestedEndMinutes: Math.round((requestedTo - lastBar[0]) / 60)
+                });
+            }
 
             // Parse the MT5 API response
             if (!data || !data.result || !data.result.answer || data.result.answer.length === 0) {
@@ -147,16 +181,28 @@ const Datafeed = {
                 const [timestamp, open, high, low, close] = candle;
                 
                 // Convert timestamp to milliseconds for TradingView
+                // Keep historical data in original timezone to avoid chart request issues
                 const timeInMs = timestamp * 1000;
                 
                 // Debug first few bars to see timestamp conversion
-                if (index < 3) {
+                if (index < 3 || index >= data.result.answer.length - 3) {
+                    const currentTime = Math.floor(Date.now() / 1000);
+                    const timeDifference = Math.floor(timeInMs / 1000) - currentTime;
+                    
                     console.log(`[MT5 Datafeed]: Bar ${index} timestamp conversion:`, {
                         originalTimestamp: timestamp,
                         timeInMs: timeInMs,
+                        secondsSinceEpoch: Math.floor(timeInMs / 1000),
                         utcDate: new Date(timeInMs).toISOString(),
                         localDate: new Date(timeInMs).toLocaleString(),
-                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        currentTimeSeconds: currentTime,
+                        currentTimeDate: new Date(currentTime * 1000).toISOString(),
+                        timeDifferenceSeconds: timeDifference,
+                        timeDifferenceMinutes: Math.round(timeDifference / 60),
+                        isPast: timeDifference < 0 ? 'YES' : 'NO',
+                        isLastBar: index >= data.result.answer.length - 3 ? 'YES - compare with first tick' : 'NO',
+                        note: 'Historical data uses original server timezone'
                     });
                 }
                 
@@ -171,7 +217,21 @@ const Datafeed = {
             }).filter(bar => {
                 // Filter bars within the requested time range
                 const barTime = bar.time / 1000; // Convert back to seconds
-                return barTime >= from && barTime < to;
+                
+                // Debug filtering for last few bars
+                if (barTime >= to - 300) { // Last 5 minutes
+                    console.log(`[MT5 Datafeed]: Filtering bar at ${barTime} (${new Date(barTime * 1000).toISOString()}):`, {
+                        barTime: barTime,
+                        from: from,
+                        to: to,
+                        withinRange: barTime >= from && barTime <= to,
+                        isExcluded: barTime < from || barTime > to,
+                        reason: barTime < from ? 'before from' : barTime > to ? 'after to' : 'included'
+                    });
+                }
+                
+                // Use <= instead of < to include bars at the exact 'to' time
+                return barTime >= from && barTime <= to;
             });
 
             console.log(`[MT5 Datafeed]: Converted ${bars.length} bars from MT5 format`);
