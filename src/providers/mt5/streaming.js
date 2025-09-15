@@ -116,9 +116,13 @@ function handleMt5TickData(tick) {
 
   const mid = (Ask + Bid) / 2;
   const tsMs = typeof Datetime_Msc === 'number' ? Datetime_Msc : Datetime * 1000;
+  const tsSeconds = Math.floor(tsMs / 1000);
+
+  // Calculate the bar time based on the resolution
+  const barTime = calculateBarTime(tsSeconds, sub.resolution);
 
   const incomingBar = {
-    time: tsMs,
+    time: barTime * 1000, // Convert back to milliseconds for TradingView
     open: mid,
     high: mid,
     low: mid,
@@ -126,18 +130,49 @@ function handleMt5TickData(tick) {
     volume: typeof Volume === 'number' ? Volume : 0,
   };
 
-  if (sub.lastDailyBar) {
+  // Check if this tick belongs to the current bar or starts a new one
+  if (sub.lastDailyBar && sub.lastDailyBar.time === incomingBar.time) {
+    // Update existing bar
     sub.lastDailyBar = {
       ...sub.lastDailyBar,
       high: Math.max(sub.lastDailyBar.high, mid),
       low: Math.min(sub.lastDailyBar.low, mid),
       close: mid,
+      volume: sub.lastDailyBar.volume + (typeof Volume === 'number' ? Volume : 0),
     };
+    console.log(`[MT5 socket] Updated bar for ${mt5Symbol} at ${new Date(barTime * 1000).toISOString()}: close=${mid}`);
   } else {
+    // Start new bar
     sub.lastDailyBar = incomingBar;
+    console.log(`[MT5 socket] New bar for ${mt5Symbol} at ${new Date(barTime * 1000).toISOString()}: open=${mid}, close=${mid}`);
   }
 
+  // Notify all handlers with the updated bar
   sub.handlers.forEach((h) => h.callback(sub.lastDailyBar));
+}
+
+function calculateBarTime(timestampSeconds, resolution) {
+  // Convert resolution string to seconds
+  const resolutionSeconds = parseResolutionToSeconds(resolution);
+  
+  // Calculate the start time of the bar this timestamp belongs to
+  return Math.floor(timestampSeconds / resolutionSeconds) * resolutionSeconds;
+}
+
+function parseResolutionToSeconds(resolution) {
+  const resolutionMap = {
+    '1': 60,        // 1 minute
+    '5': 300,       // 5 minutes
+    '15': 900,      // 15 minutes
+    '30': 1800,     // 30 minutes
+    '60': 3600,     // 1 hour
+    '240': 14400,   // 4 hours
+    '1D': 86400,    // 1 day
+    '1W': 604800,   // 1 week
+    '1M': 2592000   // 1 month (approximate)
+  };
+  
+  return resolutionMap[resolution] || 86400; // Default to 1 day
 }
 
 function findSubscriptionBySymbol(symbol) {
