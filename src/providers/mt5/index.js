@@ -1,7 +1,7 @@
 // MT5 provider implementation
 import Datafeed from './datafeed.js';
 import { makeApiRequest, generateSymbol, parseFullSymbol, parseMt5DohlcData, getSymbolPrecision, parseMt5ApiResponse } from './helpers.js';
-// import { subscribeOnStream, unsubscribeFromStream } from './streaming.js';
+import { subscribeOnStream, unsubscribeFromStream } from './streaming.js';
 import { validateConfig, getAuthHeaders } from './config.js';
 
 export default {
@@ -19,10 +19,10 @@ export default {
         getSymbolPrecision,
         parseMt5ApiResponse
     },
-    // streaming: {
-    //     subscribeOnStream,
-    //     unsubscribeFromStream
-    // },
+    streaming: {
+        subscribeOnStream,
+        unsubscribeFromStream
+    },
     config: {
         validateConfig,
         getAuthHeaders

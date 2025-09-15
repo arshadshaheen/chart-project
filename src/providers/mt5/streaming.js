@@ -1,34 +1,15 @@
-/* global io */
 import { getApiKey, getWebSocketUrl } from './config.js';
 import { parseFullSymbol } from './helpers.js';
 
 let socket = null;
-const channelToSubscription = new Map();   // key: `tick:EURUSD` -> { handlers, lastDailyBar, ... }
-const subscribedSymbols = new Set();       // symbols like "EURUSD"
+const channelToSubscription = new Map();   // key: `tick:EURUSD.s` -> { handlers, lastDailyBar, ... }
+const subscribedSymbols = new Set();       // symbols like "EURUSD.s"
 
 const apiKey = getApiKey();                // e.g. "Bearer eyJ..." (already includes "Bearer ")
 const wsBaseUrl = getWebSocketUrl();
 
 console.log('[MT5 streaming] API key:', apiKey ? 'configured' : 'missing');
-console.log('[MT5 streaming] Socket.IO URL:', wsBaseUrl);
-
-// ---- env capability: Socket.IO "extraHeaders" only in Node.js (ignored in browsers) ----
-const isNode = () => typeof process !== 'undefined' && !!process.versions?.node;
-
-// Build Socket.IO connection options
-function buildIoOptions() {
-  const opts = {
-    transports: ['websocket'],   // force WS
-    withCredentials: true,
-    // In browsers, "auth" is the standard way to pass tokens (server reads handshake.auth.token)
-    auth: { token: apiKey },
-  };
-  if (isNode()) {
-    // Node.js: we can also add real HTTP headers in the handshake
-    opts.extraHeaders = { Authorization: apiKey };
-  }
-  return opts;
-}
+console.log('[MT5 streaming] WebSocket URL:', wsBaseUrl);
 
 function openSocket() {
   if (!wsBaseUrl || !apiKey) {
@@ -36,63 +17,84 @@ function openSocket() {
     return;
   }
 
-  if (socket?.connected || socket?.connecting) {
-    try { socket.disconnect(); } catch {}
+  if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) {
+    try { socket.close(); } catch {}
   }
 
-  console.log('[MT5 socket] Connecting…');
-  socket = io(wsBaseUrl, buildIoOptions());
+  // Add Bearer token as query parameter since WebSocket doesn't support headers in browsers
+  const urlWithAuth = `${wsBaseUrl}?Authorization=${encodeURIComponent(apiKey)}`;
+  console.log('[MT5 socket] Connecting to:', urlWithAuth);
+  
+  try {
+    socket = new WebSocket(urlWithAuth);
+  } catch (error) {
+    console.error('[MT5 socket] Failed to create WebSocket:', error);
+    return;
+  }
 
-  socket.on('connect', () => {
-    console.log('[MT5 socket] Connected:', socket.id);
-
+  socket.onopen = () => {
+    console.log('[MT5 socket] Connected with Authorization header in URL');
+    
     // Re-send current subscriptions (idempotent)
     if (subscribedSymbols.size > 0) {
-      const subRequest = { type: 'subscribe_symbol', symbols: Array.from(subscribedSymbols) };
+      const subRequest = { id: 'subscribe_symbol', payload: Array.from(subscribedSymbols) };
       console.log('[MT5 socket] Resubscribe on connect:', subRequest);
-      socket.emit('subscribe_symbols', subRequest);
+      socket.send(JSON.stringify(subRequest));
     }
-  });
+  };
 
-  socket.on('disconnect', (reason) => {
-    console.log('[MT5 socket] Disconnected:', reason);
-  });
+  socket.onclose = (event) => {
+    console.log('[MT5 socket] Disconnected:', event.code, event.reason);
+    
+    // Attempt to reconnect after 5 seconds
+    setTimeout(() => {
+      console.log('[MT5 socket] Attempting to reconnect...');
+      openSocket();
+    }, 5000);
+  };
 
-  socket.on('connect_error', (err) => {
-    console.error('[MT5 socket] Connection error:', err?.message || err);
-  });
+  socket.onerror = (error) => {
+    console.error('[MT5 socket] Connection error:', error);
+  };
 
-  // Server can optionally emit auth status
-  socket.on('auth', (payload) => {
-    if (payload?.status === 'success') {
-      console.log('[MT5 socket] Auth success');
-    } else {
-      console.error('[MT5 socket] Auth failed:', payload?.message);
-    }
-  });
-
-  // Main tick stream
-  socket.on('mt5_tick', (data) => {
+  socket.onmessage = (event) => {
     try {
-      // Typical server payload pattern
+      const data = JSON.parse(event.data);
+      console.log('[MT5 socket] Received message:', data);
+      
+      // Handle authentication response (if server sends one)
+      if (data?.type === 'auth') {
+        if (data?.status === 'success') {
+          console.log('[MT5 socket] Auth success');
+        } else {
+          console.error('[MT5 socket] Auth failed:', data?.message);
+        }
+        return;
+      }
+      
+      // Handle mt5_events_tick data
       if (data?.Topic === 'mt5_events_tick' && data?.Payload?.Type === 'Tick') {
+        console.log('[MT5 socket] Received mt5_events_tick:', data.Payload.Data);
         handleMt5TickData(data.Payload.Data);
         return;
       }
+      
       // Some servers may push tick data directly
       if (data?.Type === 'Tick' && data?.Data) {
+        console.log('[MT5 socket] Received direct tick data:', data.Data);
         handleMt5TickData(data.Data);
         return;
       }
+      
       console.log('[MT5 socket] Unhandled message:', data?.Topic || data?.type, data);
     } catch (e) {
-      console.error('[MT5 socket] Error handling tick:', e);
+      console.error('[MT5 socket] Error handling message:', e);
     }
-  });
+  };
 }
 
-// Start connection - COMMENTED OUT FOR DEBUGGING HISTORICAL DATA ONLY
-// openSocket();
+// Start connection
+openSocket();
 
 // ---------- Tick handling ----------
 
@@ -165,7 +167,7 @@ export function subscribeOnStream(
     return;
   }
 
-  const mt5Symbol = `${parsed.fromSymbol}${parsed.toSymbol}`;  // e.g., EURUSD
+  const mt5Symbol = `${parsed.fromSymbol}${parsed.toSymbol}`;  // e.g., EURUSD.s
   const channelKey = `tick:${mt5Symbol}`;
 
   const handler = { id: subscriberUID, callback: onRealtimeCallback };
@@ -180,19 +182,17 @@ export function subscribeOnStream(
 
   // Track the symbol
   subscribedSymbols.add(mt5Symbol);
+  console.log('[MT5 subscribe] Added symbol to subscription list:', mt5Symbol);
+  console.log('[MT5 subscribe] Current subscribed symbols:', Array.from(subscribedSymbols));
 
-  // Emit consolidated subscription list (idempotent)
-  const subRequest = { type: 'subscribe_symbol', symbols: Array.from(subscribedSymbols) };
-  if (socket.connected) {
+  // Send consolidated subscription list (idempotent)
+  const subRequest = { id: 'subscribe_symbol', payload: Array.from(subscribedSymbols) };
+  if (socket?.readyState === WebSocket.OPEN) {
     console.log('[MT5 subscribe] -> subscribe_symbols', subRequest);
-    socket.emit('subscribe_symbols', subRequest);
+    socket.send(JSON.stringify(subRequest));
   } else {
     console.warn('[MT5 subscribe] Socket not connected; will send on connect');
-    const once = () => {
-      socket.off('connect', once);
-      socket.emit('subscribe_symbols', subRequest);
-    };
-    socket.on('connect', once);
+    // The subscription will be sent automatically when the socket reconnects
   }
 }
 
@@ -220,11 +220,11 @@ export function unsubscribeFromStream(subscriberUID) {
       const mt5Symbol = channelKey.replace('tick:', '');
       subscribedSymbols.delete(mt5Symbol);
 
-      // Re-emit the current full list (idempotent approach)
-      const subRequest = { type: 'subscribe_symbol', symbols: Array.from(subscribedSymbols) };
+      // Re-send the current full list (idempotent approach)
+      const subRequest = { id: 'subscribe_symbol', payload: Array.from(subscribedSymbols) };
       console.log('[MT5 unsubscribe] -> subscribe_symbols', subRequest);
-      if (socket.connected) {
-        socket.emit('subscribe_symbols', subRequest);
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(subRequest));
       }
     }
 

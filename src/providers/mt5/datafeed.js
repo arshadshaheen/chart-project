@@ -1,5 +1,5 @@
 import { makeApiRequest, generateSymbol, parseFullSymbol, getSymbolPrecision } from './helpers.js';
-// import { subscribeOnStream, unsubscribeFromStream } from './streaming.js';
+import { subscribeOnStream, unsubscribeFromStream } from './streaming.js';
 
 const lastBarsCache = new Map();
 
@@ -187,7 +187,7 @@ const Datafeed = {
             onErrorCallback(error.message);
         }
     },
-/**
+
     subscribeBars: (symbolInfo, resolution, onRealtimeCallback, subscriberUID, onResetCacheNeededCallback) => {
         console.log('[MT5 Datafeed]: subscribeBars called', symbolInfo, resolution);
         
@@ -202,7 +202,7 @@ const Datafeed = {
         console.log('[MT5 Datafeed]: unsubscribeBars called', subscriberUID);
         unsubscribeFromStream(subscriberUID);
     },
- */
+ 
     searchSymbols: async (userInput, exchange, symbolType, onResultReadyCallback) => {
         console.log('[MT5 Datafeed]: searchSymbols called', userInput, exchange, symbolType);
 
