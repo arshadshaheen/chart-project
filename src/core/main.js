@@ -42,6 +42,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('🔌 Using provider:', provider.name);
             console.log('🔌 Provider datafeed:', provider.datafeed);
             
+            // Get user's timezone for chart display
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            console.log('🌍 User timezone for chart:', userTimezone);
+            
             // Create the TradingView widget with provider-specific datafeed
             window.tvWidget = new TradingView.widget({
                 symbol: config.TRADINGVIEW_DEFAULT_SYMBOL,       // Default symbol pair with exchange
@@ -51,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 datafeed: provider.datafeed,             // Provider-specific datafeed
                 library_path: './charting_library_cloned_data/charting_library/', // Fixed path
                 locale: 'en',
+                timezone: userTimezone,                  // Use user's local timezone
                 debug: config.DEBUG_MODE === 'true',
                 disabled_features: [
                     'use_localstorage_for_settings',

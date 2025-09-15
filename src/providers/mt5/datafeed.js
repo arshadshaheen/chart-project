@@ -48,13 +48,17 @@ const Datafeed = {
             // Determine price scale based on symbol type
             const pricescale = getSymbolPrecision(symbol);
             
+            // Get user's local timezone
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            console.log('[MT5 Datafeed]: User timezone detected:', userTimezone);
+            
             const symbolInfo = {
                 ticker: symbolName,
                 name: `${parsedSymbol.fromSymbol}/${parsedSymbol.toSymbol}`,
                 description: `${parsedSymbol.fromSymbol}/${parsedSymbol.toSymbol} on MT5`,
                 type: 'forex',
                 session: '24x7',
-                timezone: 'Etc/UTC',
+                timezone: userTimezone, // Use user's local timezone
                 exchange: parsedSymbol.exchange,
                 minmov: 1,
                 pricescale: pricescale,
@@ -138,12 +142,26 @@ const Datafeed = {
             }
 
             // Convert MT5 DOHLC format to TradingView format
-            const bars = data.result.answer.map(candle => {
+            const bars = data.result.answer.map((candle, index) => {
                 // MT5 format: [timestamp, open, high, low, close]
                 const [timestamp, open, high, low, close] = candle;
                 
+                // Convert timestamp to milliseconds for TradingView
+                const timeInMs = timestamp * 1000;
+                
+                // Debug first few bars to see timestamp conversion
+                if (index < 3) {
+                    console.log(`[MT5 Datafeed]: Bar ${index} timestamp conversion:`, {
+                        originalTimestamp: timestamp,
+                        timeInMs: timeInMs,
+                        utcDate: new Date(timeInMs).toISOString(),
+                        localDate: new Date(timeInMs).toLocaleString(),
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                    });
+                }
+                
                 return {
-                    time: timestamp * 1000, // Convert to milliseconds
+                    time: timeInMs, // Convert to milliseconds
                     open: parseFloat(open),
                     high: parseFloat(high),
                     low: parseFloat(low),
