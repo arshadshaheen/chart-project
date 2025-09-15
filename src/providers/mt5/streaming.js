@@ -38,9 +38,9 @@ function openSocket() {
     
     // Re-send current subscriptions (idempotent)
     if (subscribedSymbols.size > 0) {
-      const subRequest = { id: 'subscribe_symbol', payload: Array.from(subscribedSymbols) };
-      console.log('[MT5 socket] Resubscribe on connect:', subRequest);
-      socket.emit('subscribe_symbols', subRequest);
+      const payload = Array.from(subscribedSymbols);
+      console.log('[MT5 socket] Resubscribe on connect:', payload);
+      socket.emit('subscribe_symbol', payload);
     }
   });
 
@@ -179,10 +179,10 @@ export function subscribeOnStream(
   }
 
   subscribedSymbols.add(mt5Symbol);
-  const subRequest = { id: 'subscribe_symbol', payload: Array.from(subscribedSymbols) };
+  const payload = Array.from(subscribedSymbols);
   if (socket?.connected) {
-    console.log('[MT5 subscribe] -> subscribe_symbols', subRequest);
-    socket.emit('subscribe_symbols', subRequest);
+    console.log('[MT5 subscribe] -> subscribe_symbol', payload);
+    socket.emit('subscribe_symbol', payload);
   } else {
     console.warn('[MT5 subscribe] Socket not connected; will send on connect');
     // The subscription will be sent automatically when the socket reconnects
@@ -210,10 +210,10 @@ export function unsubscribeFromStream(subscriberUID) {
       const mt5Symbol = channelKey.replace('tick:', '');
       subscribedSymbols.delete(mt5Symbol);
 
-      const subRequest = { id: 'subscribe_symbol', payload: Array.from(subscribedSymbols) };
-      console.log('[MT5 unsubscribe] -> subscribe_symbols', subRequest);
+      const payload = Array.from(subscribedSymbols);
+      console.log('[MT5 unsubscribe] -> subscribe_symbol', payload);
       if (socket?.connected) {
-        socket.emit('subscribe_symbols', subRequest);
+        socket.emit('subscribe_symbol', payload);
       }
     }
     break;
