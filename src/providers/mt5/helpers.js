@@ -73,30 +73,56 @@ export function generateSymbol(exchange, fromSymbol, toSymbol) {
 
 // Returns all parts of the symbol
 export function parseFullSymbol(fullSymbol) {
-    // Handle format: MT5:EUR/USD or MT5:EURUSD.s or EURUSD.s
-    let match = fullSymbol.match(/^(\w+):(\w+)\/(\w+)$/);
-    if (match) {
-        return { exchange: match[1], fromSymbol: match[2], toSymbol: match[3] };
-    }
+    console.log('[MT5 parseFullSymbol]: Parsing symbol:', fullSymbol);
     
     // Handle format: MT5:EURUSD.s
-    match = fullSymbol.match(/^(\w+):(\w+)\.(\w+)$/);
+    let match = fullSymbol.match(/^(\w+):([A-Z]{3})([A-Z]{3})\.([spe])$/);
     if (match) {
-        return { exchange: match[1], fromSymbol: match[2], toSymbol: match[3] };
+        const exchange = match[1]; // e.g., "MT5"
+        const fromSymbol = match[2]; // e.g., "EUR"
+        const baseToSymbol = match[3]; // e.g., "USD"
+        const accountType = match[4]; // e.g., "s"
+        const toSymbol = `${baseToSymbol}.${accountType}`; // e.g., "USD.s"
+        
+        const result = { exchange, fromSymbol, toSymbol, accountType };
+        console.log('[MT5 parseFullSymbol]: Matched MT5:SYMBOL.s format:', result);
+        return result;
     }
     
     // Handle format: EURUSD.s (assume MT5 exchange)
-    match = fullSymbol.match(/^(\w+)\.(\w+)$/);
+    // Format: EURUSD.s where EUR is fromSymbol and USD.s is toSymbol (with account type suffix)
+    match = fullSymbol.match(/^([A-Z]{3})([A-Z]{3})\.([spe])$/);
     if (match) {
-        return { exchange: 'MT5', fromSymbol: match[1], toSymbol: match[2] };
+        const fromSymbol = match[1]; // e.g., "EUR"
+        const baseToSymbol = match[2]; // e.g., "USD" 
+        const accountType = match[3]; // e.g., "s" (standard), "p" (premium), "e" (elite)
+        const toSymbol = `${baseToSymbol}.${accountType}`; // e.g., "USD.s"
+        
+        const result = { exchange: 'MT5', fromSymbol, toSymbol, accountType };
+        console.log('[MT5 parseFullSymbol]: Matched SYMBOL.s format:', result);
+        return result;
     }
     
     // Handle format: EURUSD (assume MT5 exchange and no suffix)
-    match = fullSymbol.match(/^(\w+)$/);
+    // For symbols without account type suffix, we need to split the 6-character pair
+    match = fullSymbol.match(/^([A-Z]{3})([A-Z]{3})$/);
     if (match) {
-        return { exchange: 'MT5', fromSymbol: match[1], toSymbol: 'USD' };
+        const fromSymbol = match[1]; // e.g., "EUR"
+        const toSymbol = match[2]; // e.g., "USD"
+        const result = { exchange: 'MT5', fromSymbol, toSymbol };
+        console.log('[MT5 parseFullSymbol]: Matched SYMBOL format:', result);
+        return result;
     }
     
+    // Handle format: MT5:EUR/USD (legacy format)
+    match = fullSymbol.match(/^(\w+):(\w+)\/(\w+)$/);
+    if (match) {
+        const result = { exchange: match[1], fromSymbol: match[2], toSymbol: match[3] };
+        console.log('[MT5 parseFullSymbol]: Matched MT5:EUR/USD format:', result);
+        return result;
+    }
+    
+    console.log('[MT5 parseFullSymbol]: No match found for:', fullSymbol);
     return null;
 }
 
@@ -108,8 +134,8 @@ export function convertMt5Timestamp(timestamp) {
 
 // Helper function to format symbol for MT5 API
 export function formatSymbolForMt5(fromSymbol, toSymbol) {
-    // MT5 typically uses symbols like EURUSD, GBPUSD, etc.
-    return `${fromSymbol}${toSymbol}`;
+    // MT5 typically uses symbols like EURUSD.s, GBPUSD.s, etc.
+    return `${fromSymbol}${toSymbol}.s`;
 }
 
 // Helper function to parse MT5 DOHLC data from API response

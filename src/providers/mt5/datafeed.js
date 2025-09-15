@@ -77,6 +77,13 @@ const Datafeed = {
     getBars: async (symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback) => {
         const { from, to, firstDataRequest } = periodParams;
         console.log('[MT5 Datafeed]: getBars called', symbolInfo, resolution, from, to);
+        console.log('[MT5 Datafeed]: Timestamp details:', {
+            from: from,
+            to: to,
+            fromDate: new Date(from * 1000),
+            toDate: new Date(to * 1000),
+            firstDataRequest: firstDataRequest
+        });
 
         const parsedSymbol = parseFullSymbol(symbolInfo.full_name);
         console.log('[MT5 Datafeed]: Parsed symbol:', parsedSymbol);
@@ -90,19 +97,34 @@ const Datafeed = {
         try {
             // Map TradingView resolution to MT5 timeframe
             const timeframe = mapResolutionToTimeframe(resolution);
-            const symbol = `${parsedSymbol.fromSymbol}${parsedSymbol.toSymbol}`;
+            // Format symbol for MT5 API (e.g., EURUSD.s)
+            // If toSymbol doesn't have account type suffix, add .s as default
+            let toSymbol = parsedSymbol.toSymbol;
+            if (!toSymbol.includes('.')) {
+                toSymbol = `${toSymbol}.s`; // Default to standard account type
+            }
+            const symbol = `${parsedSymbol.fromSymbol}${toSymbol}`;
             
             // Convert timestamps to Unix timestamps (MT5 expects seconds)
-            const fromTimestamp = from;
-            const toTimestamp = to;
+            // TradingView provides timestamps in seconds, but we need to ensure they're integers
+            const fromTimestamp = Math.floor(from);
+            const toTimestamp = Math.floor(to);
 
-            console.log('[MT5 Datafeed]: Requesting data for:', { symbol, timeframe, fromTimestamp, toTimestamp });
+            console.log('[MT5 Datafeed]: Requesting data for:', { 
+                symbol, 
+                timeframe, 
+                fromTimestamp, 
+                toTimestamp,
+                originalFrom: from,
+                originalTo: to,
+                parsedSymbol: parsedSymbol
+            });
 
             // Make API request to MT5 using the correct endpoint
             const data = await makeApiRequest(`forex/m1-history`, {
-                symbol: 'EURUSD.s', //symbol,
-                from: 1757944940 , // fromTimestamp, 
-                to: 1757949689 ,//toTimestamp,
+                symbol: symbol,
+                from: fromTimestamp, 
+                to: toTimestamp,
                 data: 'dohlc'
             });
 

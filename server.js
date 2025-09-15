@@ -49,7 +49,7 @@ app.get('/api/config', (req, res) => {
             apiKey: provider === 'mt5' ? apiKey : '',
             baseUrl: 'http://localhost:3000',
             wsUrl: 'wss://live-mt5-sockets-staging.naqdi.com',
-            defaultSymbol: 'EURUSD.s',
+            defaultSymbol: 'EUR/USD.s',
             defaultInterval: '1D'
         }
     };
