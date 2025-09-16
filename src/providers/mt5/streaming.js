@@ -123,13 +123,10 @@ function handleMt5TickData(tick) {
   // Apply same timezone conversion as historical data
   let tsMs = typeof Datetime_Msc === 'number' ? Datetime_Msc : Datetime * 1000;
   
-  // TESTING: Reduce tick timestamps by exactly 3 hours to align with historical data
-  const TESTING_OFFSET = -3 * 60 * 60 * 1000; // -3 hours in milliseconds
-  tsMs = tsMs + TESTING_OFFSET;
-  
-  // DON'T apply timezone offset to match historical data
-  // Historical data uses original server timestamps without timezone conversion
-  // We need to match this behavior to avoid gaps
+  // Subtract 3 hours from server timestamp to convert back to UTC
+  // MT5 server (Windows UTC OS + GMT+3 settings) sends ticks with +3 hours from UTC
+  const SERVER_TIMEZONE_OFFSET = -3 * 60 * 60 * 1000; // -3 hours in milliseconds
+  tsMs = tsMs + SERVER_TIMEZONE_OFFSET;
   
   // Debug timezone conversion for first few ticks
   if (!sub.tickDebugCount) sub.tickDebugCount = 0;
@@ -140,19 +137,16 @@ function handleMt5TickData(tick) {
     const originalTs = typeof Datetime_Msc === 'number' ? Datetime_Msc : Datetime * 1000;
     
     console.log(`[MT5 socket] Tick ${sub.tickDebugCount} timestamp conversion:`, {
-      originalTimestamp: typeof Datetime_Msc === 'number' ? Datetime_Msc : Datetime,
+      originalServerTimestamp: typeof Datetime_Msc === 'number' ? Datetime_Msc : Datetime,
       originalTsMs: originalTs,
-      originalDate: new Date(originalTs).toISOString(),
-      testingOffset: TESTING_OFFSET,
-      testingOffsetHours: TESTING_OFFSET / (60 * 60 * 1000),
+      serverDate: new Date(originalTs).toISOString(),
+      serverOffset: SERVER_TIMEZONE_OFFSET,
+      serverOffsetHours: SERVER_TIMEZONE_OFFSET / (60 * 60 * 1000),
       adjustedTsMs: tsMs,
-      adjustedDate: new Date(tsMs).toISOString(),
-      localDate: new Date(tsMs).toLocaleString(),
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      utcDate: new Date(tsMs).toISOString(),
       ask: Ask,
       bid: Bid,
       mid: mid,
-      // Calculate time gap from Unix epoch for debugging
       secondsSinceEpoch: Math.floor(tsMs / 1000),
       currentTimeSeconds: currentTime,
       currentTimeDate: new Date(currentTime * 1000).toISOString(),
@@ -160,7 +154,7 @@ function handleMt5TickData(tick) {
       timeDifferenceMinutes: Math.round(timeDifference / 60),
       isFuture: timeDifference > 0 ? 'YES - TICK IS IN FUTURE!' : 'NO',
       gapFromHistorical: sub.tickDebugCount === 0 ? 'First tick - compare with last historical bar' : 'N/A',
-      note: 'TESTING: Real-time data adjusted by -3 hours to align with historical data'
+      note: 'Server timestamp converted from +3hrs to UTC (Windows UTC OS + GMT+3 settings)'
     });
     sub.tickDebugCount++;
   }
@@ -180,7 +174,11 @@ function handleMt5TickData(tick) {
   };
 
   // Check if this tick belongs to the current bar or starts a new one
-  if (sub.lastDailyBar && sub.lastDailyBar.time === incomingBar.time) {
+  // Use more flexible comparison to bridge historical-real-time gap
+  const timeDifference = sub.lastDailyBar ? Math.abs(sub.lastDailyBar.time - incomingBar.time) : Infinity;
+  const isSameBarPeriod = timeDifference < 60000; // Within 1 minute = same bar period
+  
+  if (sub.lastDailyBar && isSameBarPeriod) {
     // Update existing bar - properly handle Bid/Ask for OHLC
     sub.lastDailyBar = {
       ...sub.lastDailyBar,
@@ -195,7 +193,11 @@ function handleMt5TickData(tick) {
       // Accumulate volume
       volume: sub.lastDailyBar.volume + (typeof Volume === 'number' ? Volume : 0),
     };
-    console.log(`[MT5 socket] Updated bar for ${mt5Symbol} at ${new Date(barTime * 1000).toISOString()}: OHLC(${sub.lastDailyBar.open}, ${sub.lastDailyBar.high}, ${sub.lastDailyBar.low}, ${sub.lastDailyBar.close}) [Ask:${Ask}, Bid:${Bid}]`);
+    
+    // Debug logging to show when we're bridging historical vs updating real-time
+    const wasHistoricalUpdate = timeDifference > 1000; // If timestamps differ by more than 1 second, likely historical
+    const updateType = wasHistoricalUpdate ? 'BRIDGED HISTORICAL' : 'UPDATED REAL-TIME';
+    console.log(`[MT5 socket] ${updateType} bar for ${mt5Symbol} at ${new Date(barTime * 1000).toISOString()}: OHLC(${sub.lastDailyBar.open}, ${sub.lastDailyBar.high}, ${sub.lastDailyBar.low}, ${sub.lastDailyBar.close}) [Ask:${Ask}, Bid:${Bid}] [Time diff: ${Math.round(timeDifference/1000)}s]`);
   } else {
     // Start new bar - initialize with current tick data
     sub.lastDailyBar = {
