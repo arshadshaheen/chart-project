@@ -1,7 +1,8 @@
 import { makeApiRequest, generateSymbol, parseFullSymbol, getSymbolPrecision } from './helpers.js';
 import { subscribeOnStream, unsubscribeFromStream } from './streaming.js';
-import { getTimezoneOffset } from './config.js';
+import { getTimezoneOffset, isFakeDataEnabled } from './config.js';
 import { getCurrentProviderConfig } from '../../core/config.js';
+import { generateFakeHistory, initializeFakeData } from './fakeDataProvider.js';
 
 const lastBarsCache = new Map();
 const requestCache = new Map();
@@ -235,8 +236,8 @@ const Datafeed = {
             
             const symbolInfo = {
                 ticker: symbolName,
-                name: `${parsedSymbol.fromSymbol}/${parsedSymbol.toSymbol}`,
-                description: `${parsedSymbol.fromSymbol}/${parsedSymbol.toSymbol} on MT5`,
+                name: symbolName, // Use the original symbol name which already has .s
+                description: `${symbolName} on MT5`,
                 type: 'forex',
                 session: '24x7',
                 timezone: symbolTimezone, // Use UTC - conversion handled in API calls
@@ -303,13 +304,13 @@ const Datafeed = {
             return;
         }
 
-        // Format symbol for MT5 API (e.g., EURUSD.s)
-        let toSymbol = parsedSymbol.toSymbol;
-        if (!toSymbol.includes('.')) {
-            toSymbol = `${toSymbol}.s`; // Default to standard account type
-        }
-        const symbol = `${parsedSymbol.fromSymbol}${toSymbol}`;
-        
+            // Format symbol for MT5 API (e.g., EURUSD.s)
+            let toSymbol = parsedSymbol.toSymbol;
+            if (!toSymbol.includes('.')) {
+                toSymbol = `${toSymbol}.s`; // Default to standard account type
+            }
+            const symbol = `${parsedSymbol.fromSymbol}${toSymbol}`;
+            
         // Generate cache key for this request
         const cacheKey = generateCacheKey(symbol, resolution, normalizedFrom, normalizedTo);
         
@@ -420,8 +421,8 @@ const Datafeed = {
                     
                     return {
                         symbol: symbol,
-                        full_name: `MT5:${base}/${quote}`,
-                        description: `${base}/${quote} on MT5`,
+                        full_name: `MT5:${symbol}`,
+                        description: `${symbol} on MT5`,
                         exchange: 'MT5',
                         ticker: symbol,
                         type: symbolType || 'forex'

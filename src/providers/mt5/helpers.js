@@ -1,8 +1,40 @@
-import { getApiKey, getBaseUrl, validateConfig } from './config.js';
+import { getApiKey, getBaseUrl, validateConfig, isFakeDataEnabled } from './config.js';
+import { generateFakeHistory } from './fakeDataProvider.js';
+
+// Generate fake API response for m1-history requests
+function generateFakeApiResponse(path, params) {
+    if (!path.includes('m1-history') || !params.symbol || !params.from || !params.to) {
+        throw new Error('Invalid fake API request parameters');
+    }
+    
+    console.log('[MT5 makeApiRequest]: Generating fake API response for', path, params);
+    
+    // Convert timestamps back to UTC for fake data generation
+    const SERVER_TIMEZONE_OFFSET = 3 * 60 * 60; // 3 hours in seconds
+    const fromUtc = params.from - SERVER_TIMEZONE_OFFSET;
+    const toUtc = params.to - SERVER_TIMEZONE_OFFSET;
+    
+    const fakeBars = generateFakeHistory(params.symbol, fromUtc, toUtc);
+    
+    // Return in MT5 API format
+    return {
+        result: {
+            answer: fakeBars
+        },
+        status: 'success',
+        message: 'Fake data generated successfully'
+    };
+}
 
 // Makes requests to MT5 API
 export async function makeApiRequest(path, params = {}) {
     try {
+        // Check if fake data mode is enabled
+        if (isFakeDataEnabled() && path.includes('m1-history')) {
+            console.log('[MT5 makeApiRequest]: Using fake data for', path, params);
+            return generateFakeApiResponse(path, params);
+        }
+        
         const baseUrl = getBaseUrl();
         const apiKey = getApiKey();
         

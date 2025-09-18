@@ -24,7 +24,8 @@ const PROVIDER_CONFIG = {
         baseUrl: 'http://localhost:3000',
         wsUrl: 'wss://live-mt5-sockets-staging.naqdi.com',
         defaultSymbol: 'EURUSD.s',
-        defaultInterval: '1'
+        defaultInterval: '1',
+        isFakeData: 1  // Set to 1 for fake data mode (testing)
     }
 };
 

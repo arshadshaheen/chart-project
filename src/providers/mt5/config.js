@@ -37,6 +37,15 @@ export function getWebSocketUrl() {
 }
 
 /**
+ * Check if fake data mode is enabled for testing
+ * @returns {boolean} True if fake data mode is enabled
+ */
+export function isFakeDataEnabled() {
+    const config = getProviderConfig();
+    return config.isFakeData === 1 || config.isFakeData === true;
+}
+
+/**
  * Validate the provider configuration
  * @returns {boolean} True if configuration is valid
  */

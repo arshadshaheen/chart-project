@@ -1,6 +1,7 @@
 /* global io */
-import { getApiKey, getWebSocketUrl, getTimezoneOffset } from './config.js';
+import { getApiKey, getWebSocketUrl, getTimezoneOffset, isFakeDataEnabled } from './config.js';
 import { parseFullSymbol, makeApiRequest } from './helpers.js';
+import { startFakeTickGeneration, initializeFakeData } from './fakeDataProvider.js';
 
 let socket = null;
 const channelToSubscription = new Map();   // key: `tick:EURUSD.s` -> { handlers, lastDailyBar, ... }
@@ -14,6 +15,13 @@ console.log('[MT5 streaming] API key:', apiKey ? 'configured' : 'missing');
 console.log('[MT5 streaming] Socket.IO URL:', wsBaseUrl);
 
 function openSocket() {
+  // Initialize fake data if enabled
+  if (isFakeDataEnabled()) {
+    console.log('[MT5 streaming] Fake data mode enabled - initializing fake data provider');
+    initializeFakeData();
+    return; // Don't open real socket connection
+  }
+  
   if (!wsBaseUrl || !apiKey) {
     console.warn('[MT5 streaming] Not connecting: missing URL or API key');
     return;
@@ -421,6 +429,19 @@ export function subscribeOnStream(
   }
 
   subscribedSymbols.add(mt5Symbol);
+  
+  // Handle fake data mode
+  if (isFakeDataEnabled()) {
+    console.log(`[MT5 streaming] Starting fake tick generation for ${mt5Symbol}`);
+    const fakeTickGenerator = startFakeTickGeneration((tickData) => {
+      handleMt5TickData(tickData);
+    }, mt5Symbol);
+    
+    // Store the generator so we can stop it later
+    entry.fakeTickGenerator = fakeTickGenerator;
+    return;
+  }
+  
   const payload = Array.from(subscribedSymbols);
   if (socket?.connected) {
     console.log('[MT5 subscribe] -> subscribe_symbol', payload);
@@ -447,6 +468,12 @@ export function unsubscribeFromStream(subscriberUID) {
     entry.handlers.splice(idx, 1);
 
     if (entry.handlers.length === 0) {
+      // Stop fake tick generation if it exists
+      if (entry.fakeTickGenerator) {
+        console.log(`[MT5 streaming] Stopping fake tick generation for ${channelKey}`);
+        entry.fakeTickGenerator.stop();
+      }
+      
       channelToSubscription.delete(channelKey);
 
       const mt5Symbol = channelKey.replace('tick:', '');
