@@ -214,13 +214,9 @@ async function requestHistoryForPeriod(symbol, resolution, fromTime, toTime, sub
                 console.log(`[MT5 streaming] Stored historical bar separately: ${new Date(sub.lastHistoricalBar.time).toISOString()}`);
                 console.log(`[MT5 streaming] Current tick-based bar remains: ${sub.lastDailyBar ? new Date(sub.lastDailyBar.time).toISOString() : 'None'}`);
                 
-                // Force TradingView to refresh the chart to show the updated historical data
-                setTimeout(() => {
-                    if (sub.onResetCacheNeededCallback) {
-                        console.log(`[MT5 streaming] Triggering cache reset to update chart with historical data`);
-                        sub.onResetCacheNeededCallback();
-                    }
-                }, bars.length * 10 + 50); // Wait for all bars to be sent, then reset cache
+                // DON'T trigger cache reset - it disrupts real-time tick updates
+                // The historical bars sent via callbacks should be enough to update the chart
+                console.log(`[MT5 streaming] Historical data sent to TradingView - no cache reset needed to preserve tick updates`);
             }
         }
     } catch (error) {
@@ -355,6 +351,13 @@ async function handleMt5TickData(tick) {
   }
 
   // Notify all handlers with the updated current bar
+  console.log(`[MT5 streaming] Sending tick update to ${sub.handlers.length} handlers:`, {
+    symbol: mt5Symbol,
+    barTime: new Date(sub.lastDailyBar.time).toISOString(),
+    close: sub.lastDailyBar.close.toFixed(5),
+    note: 'Real-time tick update'
+  });
+  
   sub.handlers.forEach((h) => h.callback(sub.lastDailyBar));
 }
 
