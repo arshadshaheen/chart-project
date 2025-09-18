@@ -6,7 +6,7 @@ const PROVIDER = 'mt5'; // Options: 'mt5' or 'cryptocompare'
 
 // API Keys - Set your API keys here
 const API_KEYS = {
-    mt5: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAwMTQzNSwicm9sZSI6eyJpZCI6MiwibmFtZSI6IkNsaWVudCIsImFwcE5hbWUiOiJjbGllbnQgcG9ydGFsIiwiZGVzY3JpcHRpb24iOm51bGwsImRlZmF1bHREYXNoYm9hcmQiOiJHZW5lcmFsIERhc2hib2FyZCIsImRhc2hib2FyZElkIjoxMDIsImlzUmVhZE9ubHkiOnRydWUsImRlcGFydG1lbnRJZCI6bnVsbCwiaXNIaWRkZW4iOnRydWUsImNhblNlZUVtYWlsIjp0cnVlLCJjYW5TZWVQaG9uZU51bWJlciI6dHJ1ZSwic2VlT3RoZXJDb25maWRlbnRpYWxEYXRhIjp0cnVlLCJjbG9uZWRGcm9tIjpudWxsLCJpc0FjdGl2ZSI6dHJ1ZSwiY3JlYXRlZEF0IjoiMjAyNC0wNS0yN1QxMjozMjo1Ni4wOTdaIiwidXBkYXRlZEF0IjoiMjAyNC0wNi0yM1QxNTowODowMi42NDBaIiwiX19lbnRpdHkiOiJSb2xlIn0sImxhbmd1YWdlSXNvIjoiRU4iLCJzZXNzaW9uSWQiOjc0NjgsImVtYWlsIjoiaGFuYW4uYSt0ZXlzeTFzdEBnYXRlc28uY29tIiwiaWF0IjoxNzU4MDA2NTEzLCJleHAiOjE3NTgwOTI5MTN9.jmELCTDBtZq-bm9PR_I7F00Cu8VlkJ25SyPE3jYMmC8',
+    mt5: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAwMTQzNSwicm9sZSI6eyJpZCI6MiwibmFtZSI6IkNsaWVudCIsImFwcE5hbWUiOiJjbGllbnQgcG9ydGFsIiwiZGVzY3JpcHRpb24iOm51bGwsImRlZmF1bHREYXNoYm9hcmQiOiJHZW5lcmFsIERhc2hib2FyZCIsImRhc2hib2FyZElkIjoxMDIsImlzUmVhZE9ubHkiOnRydWUsImRlcGFydG1lbnRJZCI6bnVsbCwiaXNIaWRkZW4iOnRydWUsImNhblNlZUVtYWlsIjp0cnVlLCJjYW5TZWVQaG9uZU51bWJlciI6dHJ1ZSwic2VlT3RoZXJDb25maWRlbnRpYWxEYXRhIjp0cnVlLCJjbG9uZWRGcm9tIjpudWxsLCJpc0FjdGl2ZSI6dHJ1ZSwiY3JlYXRlZEF0IjoiMjAyNC0wNS0yN1QxMjozMjo1Ni4wOTdaIiwidXBkYXRlZEF0IjoiMjAyNC0wNi0yM1QxNTowODowMi42NDBaIiwiX19lbnRpdHkiOiJSb2xlIn0sImxhbmd1YWdlSXNvIjoiRU4iLCJzZXNzaW9uSWQiOjc1MDAsImVtYWlsIjoiaGFuYW4uYSt0ZXlzeTFzdEBnYXRlc28uY29tIiwiaWF0IjoxNzU4MTc5NTM1LCJleHAiOjE3NTgyNjU5MzV9.kzSVQdvakEnNGldaSeusOF60Y1z4u0GIU_3dTOHz4xE',
     cryptocompare: 'e459128e835fcf1a73fdd58a89bedabf6efcb788838ebc612a613bb5166f8cc1'
 };
 
@@ -24,8 +24,7 @@ const PROVIDER_CONFIG = {
         baseUrl: 'http://localhost:3000',
         wsUrl: 'wss://live-mt5-sockets-staging.naqdi.com',
         defaultSymbol: 'EURUSD.s',
-        defaultInterval: '1',
-        serverTimezone: 'Europe/Bucharest' // MT5 Server timezone (UTC+2)
+        defaultInterval: '1'
     }
 };
 

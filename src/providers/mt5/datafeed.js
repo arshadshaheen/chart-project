@@ -63,14 +63,6 @@ function parseResolutionToSeconds(resolution) {
     return resolutionMap[resolution] || 60; // Default to 1 minute
 }
 
-// Get server timezone - hardcoded to UTC+2
-function getServerTimezone() {
-    // Use configured timezone from config (UTC+2)
-    const config = getCurrentProviderConfig();
-    const serverTimezone = config.serverTimezone || 'Europe/Bucharest'; // UTC+2
-    console.log('[MT5 Datafeed]: Using configured server timezone:', serverTimezone);
-    return serverTimezone;
-}
 
 // Process API response and convert to TradingView format
 function processApiResponse(data, normalizedFrom, normalizedTo, symbolInfo, firstDataRequest) {

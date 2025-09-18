@@ -14,14 +14,6 @@ console.log('TRADINGVIEW_DEFAULT_SYMBOL:', config.TRADINGVIEW_DEFAULT_SYMBOL);
 console.log('TRADINGVIEW_DEFAULT_INTERVAL:', config.TRADINGVIEW_DEFAULT_INTERVAL);
 console.log('DEBUG_MODE:', config.DEBUG_MODE);
 
-// Get server timezone - hardcoded to UTC+2
-function getServerTimezone() {
-    // Use configured timezone from config (UTC+2)
-    const providerConfig = getCurrentProviderConfig();
-    const serverTimezone = providerConfig.serverTimezone || 'Europe/Bucharest'; // UTC+2
-    console.log('🌍 Using configured server timezone:', serverTimezone);
-    return serverTimezone;
-}
 
 // Validate configuration immediately
 validateConfig();
@@ -51,11 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('🔌 Using provider:', provider.name);
             console.log('🔌 Provider datafeed:', provider.datafeed);
             
-            // Get user's timezone for chart display
-            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            console.log('🌍 User timezone for chart:', userTimezone);
-            
-            // Use UTC for TradingView widget - we'll handle timezone conversion in datafeed
+            // Use UTC for TradingView widget - timezone conversion handled in datafeed
             const widgetTimezone = 'UTC';
             console.log('🌍 Widget timezone (UTC):', widgetTimezone);
             
