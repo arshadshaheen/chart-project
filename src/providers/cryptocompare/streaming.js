@@ -41,7 +41,7 @@ socket.onerror = function onStreamError(error) {
   console.error('❌ [socket] Error:', error);
 };
 
-socket.onmessage = function onStreamMessage(event) {
+socket.onmessage = async function onStreamMessage(event) {
   // Parse the incoming data (format matches the documentation)
   const data = JSON.parse(event.data);
   console.log('📨 [socket] Message received:', data);
