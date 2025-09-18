@@ -35,24 +35,50 @@ The application supports **two main data providers**:
 
 ## 🔧 Provider Configuration
 
+### 🔐 Secure Configuration with Environment Variables
+
+**IMPORTANT**: All sensitive configuration (API keys, provider settings) is now loaded from environment variables for security.
+
+### Setting Up Environment Variables
+
+1. **Copy the example file**:
+   ```bash
+   cp env.example .env
+   ```
+
+2. **Edit `.env` file** with your actual values:
+   ```bash
+   # Provider selection
+   PROVIDER=mt5
+   
+   # API Keys (keep secure!)
+   MT5_API_KEY=Bearer your_actual_mt5_token_here
+   CRYPTOCOMPARE_API_KEY=your_actual_cryptocompare_key_here
+   
+   # MT5 Settings
+   MT5_FAKE_DATA=0  # Set to 1 for fake data mode
+   ```
+
+3. **Restart the server** for changes to take effect
+
+### 🚨 Security Benefits
+
+- ✅ **No hardcoded secrets** in source code
+- ✅ **Environment-based configuration** 
+- ✅ **Server-side validation** before serving config
+- ✅ **Fallback configuration** if server fails
+- ✅ **`.env` file ignored** by version control
+
 ### Switching Providers
 
-To change the active provider, edit `src/core/config.js`:
+Change the `PROVIDER` value in your `.env` file:
 
-```javascript
-// Change this line to switch providers
-const PROVIDER = 'mt5'; // Options: 'mt5' or 'cryptocompare'
-```
+```bash
+# For MT5 provider
+PROVIDER=mt5
 
-### API Keys Configuration
-
-Set your API keys in `src/core/config.js`:
-
-```javascript
-const API_KEYS = {
-    mt5: 'Bearer your-mt5-token-here',
-    cryptocompare: 'your-cryptocompare-api-key-here'
-};
+# For CryptoCompare provider  
+PROVIDER=cryptocompare
 ```
 
 ---
@@ -63,16 +89,13 @@ The MT5 provider includes a **fake data mode** for testing when the real MT5 ser
 
 ### 🚀 Enabling Fake Data Mode
 
-1. **Edit Configuration**:
-   ```javascript
-   // In src/core/config.js
-   mt5: {
-       // ... other config
-       isFakeData: 1  // Set to 1 to enable fake data
-   }
+1. **Edit Environment Variable**:
+   ```bash
+   # In your .env file
+   MT5_FAKE_DATA=1  # Set to 1 to enable fake data
    ```
 
-2. **Restart Application**: Reload the page for changes to take effect
+2. **Restart Server**: Restart the Node.js server for changes to take effect
 
 ### 🎯 Fake Data Features
 
@@ -149,44 +172,26 @@ src/providers/
 ## 🎮 Usage Examples
 
 ### Using MT5 Provider with Real Data
-```javascript
-// In src/core/config.js
-const PROVIDER = 'mt5';
-const PROVIDER_CONFIG = {
-    mt5: {
-        apiKey: 'Bearer your-token',
-        baseUrl: 'http://localhost:3000',
-        wsUrl: 'wss://live-mt5-sockets-staging.naqdi.com',
-        defaultSymbol: 'EURUSD.s',
-        isFakeData: 0  // Real data mode
-    }
-};
+```bash
+# In your .env file
+PROVIDER=mt5
+MT5_API_KEY=Bearer your_actual_mt5_token_here
+MT5_FAKE_DATA=0
 ```
 
 ### Using MT5 Provider with Fake Data
-```javascript
-// In src/core/config.js
-const PROVIDER = 'mt5';
-const PROVIDER_CONFIG = {
-    mt5: {
-        // ... other config
-        isFakeData: 1  // Fake data mode
-    }
-};
+```bash
+# In your .env file
+PROVIDER=mt5
+MT5_API_KEY=Bearer your_actual_mt5_token_here
+MT5_FAKE_DATA=1
 ```
 
 ### Using CryptoCompare Provider
-```javascript
-// In src/core/config.js
-const PROVIDER = 'cryptocompare';
-const PROVIDER_CONFIG = {
-    cryptocompare: {
-        apiKey: 'your-api-key',
-        baseUrl: 'https://min-api.cryptocompare.com/',
-        wsUrl: 'wss://streamer.cryptocompare.com/v2',
-        defaultSymbol: 'Bitfinex:BTC/USDT'
-    }
-};
+```bash
+# In your .env file
+PROVIDER=cryptocompare
+CRYPTOCOMPARE_API_KEY=your_actual_cryptocompare_key_here
 ```
 
 ---
@@ -194,29 +199,31 @@ const PROVIDER_CONFIG = {
 ## 🐛 Troubleshooting
 
 ### Fake Data Not Working
-- ✅ Ensure `isFakeData: 1` in `src/core/config.js`
-- ✅ Restart the application (reload page)
+- ✅ Ensure `MT5_FAKE_DATA=1` in your `.env` file
+- ✅ Restart the Node.js server (not just reload page)
 - ✅ Check browser console for fake data initialization messages
 
 ### Provider Not Loading
-- ✅ Verify provider name in `src/core/config.js` matches available providers
-- ✅ Check API keys are properly configured
-- ✅ Review browser console for error messages
+- ✅ Verify `PROVIDER` value in `.env` file matches available providers
+- ✅ Check API keys are properly configured in `.env`
+- ✅ Review server console for environment variable loading messages
+- ✅ Review browser console for configuration loading messages
 
 ### Real-time Data Issues
-- ✅ Verify WebSocket URL is correct
-- ✅ Check API key authentication
+- ✅ Verify WebSocket URL is correct in `.env`
+- ✅ Check API key authentication in `.env`
 - ✅ Ensure network connectivity to data source
+- ✅ Restart server after changing environment variables
 
 ---
 
 ## 🔄 Provider Switching
 
-The application supports **hot-switching** between providers:
+The application supports **secure switching** between providers:
 
-1. **Change Provider**: Update `PROVIDER` in `src/core/config.js`
-2. **Update Configuration**: Set appropriate API keys and URLs
-3. **Restart**: Reload the page to initialize the new provider
+1. **Change Provider**: Update `PROVIDER` in your `.env` file
+2. **Update API Keys**: Set appropriate API keys in `.env`
+3. **Restart Server**: Restart the Node.js server to load new configuration
 
 The provider system is designed to be **modular and extensible** - new providers can be added by following the existing structure and implementing the required interfaces.
 

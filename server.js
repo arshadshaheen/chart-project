@@ -30,27 +30,30 @@ app.get('/', (req, res) => {
 // API endpoint to get configuration
 app.get('/api/config', (req, res) => {
     const provider = process.env.PROVIDER || 'mt5';
-    const apiKey = process.env.PROVIDER_API_KEY || '';
+    const mt5ApiKey = process.env.MT5_API_KEY || '';
+    const cryptocompareApiKey = process.env.CRYPTOCOMPARE_API_KEY || '';
     
     console.log('🔍 [Server] Environment variables loaded:');
     console.log('PROVIDER:', provider);
-    console.log('API_KEY:', apiKey ? 'configured' : 'missing');
+    console.log('MT5_API_KEY:', mt5ApiKey ? 'configured' : 'missing');
+    console.log('CRYPTOCOMPARE_API_KEY:', cryptocompareApiKey ? 'configured' : 'missing');
     
-    // Provider-specific configurations (hardcoded)
+    // Provider-specific configurations from environment variables
     const providerConfigs = {
         cryptocompare: {
-            apiKey: provider === 'cryptocompare' ? apiKey : '',
-            baseUrl: 'https://min-api.cryptocompare.com/',
-            wsUrl: 'wss://streamer.cryptocompare.com/v2',
-            defaultSymbol: 'Bitfinex:BTC/USDT',
-            defaultInterval: '1D'
+            apiKey: cryptocompareApiKey,
+            baseUrl: process.env.CRYPTOCOMPARE_BASE_URL || 'https://min-api.cryptocompare.com/',
+            wsUrl: process.env.CRYPTOCOMPARE_WS_URL || 'wss://streamer.cryptocompare.com/v2',
+            defaultSymbol: process.env.CRYPTOCOMPARE_DEFAULT_SYMBOL || 'Bitfinex:BTC/USDT',
+            defaultInterval: process.env.CRYPTOCOMPARE_DEFAULT_INTERVAL || '1D'
         },
         mt5: {
-            apiKey: provider === 'mt5' ? apiKey : '',
-            baseUrl: 'http://localhost:3000',
-            wsUrl: 'wss://live-mt5-sockets-staging.naqdi.com',
-            defaultSymbol: 'EUR/USD.s',
-            defaultInterval: '1D'
+            apiKey: mt5ApiKey,
+            baseUrl: process.env.MT5_BASE_URL || 'http://localhost:3000',
+            wsUrl: process.env.MT5_WS_URL || 'wss://live-mt5-sockets-staging.naqdi.com',
+            defaultSymbol: process.env.MT5_DEFAULT_SYMBOL || 'EURUSD.s',
+            defaultInterval: process.env.MT5_DEFAULT_INTERVAL || '1',
+            isFakeData: parseInt(process.env.MT5_FAKE_DATA || '0')
         }
     };
     
@@ -58,17 +61,18 @@ app.get('/api/config', (req, res) => {
     
     const config = {
         PROVIDER: provider,
-        PROVIDER_API_KEY: apiKey,
+        PROVIDER_API_KEY: provider === 'mt5' ? mt5ApiKey : cryptocompareApiKey,
         TRADINGVIEW_DEFAULT_SYMBOL: activeProviderConfig.defaultSymbol,
         TRADINGVIEW_DEFAULT_INTERVAL: activeProviderConfig.defaultInterval,
-        DEBUG_MODE: 'true',
+        DEBUG_MODE: process.env.DEBUG_MODE || 'true',
         PROVIDER_CONFIG: {
             cryptocompare: providerConfigs.cryptocompare,
             mt5: providerConfigs.mt5
         }
     };
     
-    console.log('🔧 [Server] Serving config:', config);
+    console.log('🔧 [Server] Serving config for provider:', provider);
+    console.log('🔧 [Server] Config keys:', Object.keys(config));
     res.json(config);
 });
 

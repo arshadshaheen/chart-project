@@ -1,27 +1,46 @@
 // Main application entry point with provider-based architecture
 import { getActiveProvider } from '../providers/index.js';
 import { 
-    config,
+    getConfig,
+    getConfigSync,
     validateConfig,
     getCurrentProvider,
     getCurrentProviderConfig
 } from './config.js';
 
-console.log('🔧 Configuration loaded:');
-console.log('Current Provider:', getCurrentProvider());
-console.log('Provider Config:', getCurrentProviderConfig());
-console.log('TRADINGVIEW_DEFAULT_SYMBOL:', config.TRADINGVIEW_DEFAULT_SYMBOL);
-console.log('TRADINGVIEW_DEFAULT_INTERVAL:', config.TRADINGVIEW_DEFAULT_INTERVAL);
-console.log('DEBUG_MODE:', config.DEBUG_MODE);
+console.log('🔧 Initializing application...');
 
-
-// Validate configuration immediately
-validateConfig();
+// Load configuration from server and validate
+async function initializeApp() {
+    try {
+        console.log('🔄 Loading configuration from server...');
+        const config = await getConfig();
+        
+        console.log('✅ Configuration loaded:');
+        console.log('Current Provider:', getCurrentProvider());
+        console.log('Provider Config:', getCurrentProviderConfig());
+        console.log('TRADINGVIEW_DEFAULT_SYMBOL:', config.TRADINGVIEW_DEFAULT_SYMBOL);
+        console.log('TRADINGVIEW_DEFAULT_INTERVAL:', config.TRADINGVIEW_DEFAULT_INTERVAL);
+        console.log('DEBUG_MODE:', config.DEBUG_MODE);
+        
+        // Validate configuration
+        validateConfig();
+        
+        return config;
+    } catch (error) {
+        console.error('❌ Failed to initialize configuration:', error);
+        // Continue with fallback config
+        return getConfigSync();
+    }
+}
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('📄 DOM Content Loaded');
     console.log('TradingView available:', typeof TradingView !== 'undefined');
+    
+    // Initialize configuration first
+    const config = await initializeApp();
     
     // Wait a bit more for TradingView library to be fully loaded
     setTimeout(async () => {
