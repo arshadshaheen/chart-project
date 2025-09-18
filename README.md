@@ -1,13 +1,22 @@
-# TradingView Chart Project
+# TradingView Multi-Provider Datafeed Project
 
-A TradingView Advanced Charts implementation with custom datafeed using CryptoCompare API.
+A comprehensive TradingView Advanced Charts implementation with multiple datafeed providers, originally a TradingView tutorial project that has been enhanced to support **CryptoCompare**, **MT5**, and **Fake Data** providers for learning and development purposes.
+
+## 🎯 Project Purpose
+
+This project serves as a **learning resource and contribution platform** for developers interested in:
+- TradingView Charting Library integration
+- Custom datafeed implementations
+- Real-time financial data streaming
+- Multi-provider architecture patterns
+- Secure configuration management
 
 ## 🚀 Quick Start
 
 ### 1. Clone the Repository
 ```bash
-git clone <your-repo-url>
-cd chart-project
+git clone https://github.com/your-username/tradingview-multi-provider-datafeed.git
+cd tradingview-multi-provider-datafeed
 ```
 
 ### 2. Set Up Environment Variables
@@ -19,144 +28,233 @@ Create a `.env` file in the project root:
 cp env.example .env
 ```
 
-Edit the `.env` file with your actual API keys:
+Edit the `.env` file with your API keys:
 
 ```env
-# CryptoCompare API Configuration
-CRYPTOCOMPARE_API_KEY=your_actual_api_key_here
+# Provider Configuration
+PROVIDER=mt5  # Options: 'mt5' or 'cryptocompare'
 
-# TradingView Configuration
-TRADINGVIEW_DEFAULT_SYMBOL=Bitfinex:BTC/USDT
-TRADINGVIEW_DEFAULT_INTERVAL=1D
+# API Keys (Keep these secure!)
+MT5_API_KEY=Bearer your_mt5_bearer_token_here
+CRYPTOCOMPARE_API_KEY=your_cryptocompare_api_key_here
+
+# MT5 Configuration
+MT5_FAKE_DATA=0  # Set to 1 for fake data mode (testing)
 
 # Development Settings
 DEBUG_MODE=true
+PORT=3001
 ```
 
-### 3. Get Your CryptoCompare API Key
-
-1. Visit [CryptoCompare API](https://min-api.cryptocompare.com/)
-2. Sign up for a free account
-3. Get your API key from the dashboard
-4. Add it to your `.env` file
+### 3. Install Dependencies
+```bash
+npm install
+```
 
 ### 4. Run the Project
-
-#### Option A: Development Version (with .env support)
 ```bash
-# Serve the files using a local server
-python -m http.server 8000
-# or
-npx serve .
-# or
-php -S localhost:8000
+# Start the Node.js server
+node server.js
+
+# Open in browser
+# http://localhost:3001
 ```
 
-Then open: `http://localhost:8000/index-dev.html`
+## 📊 Supported Providers
 
-#### Option B: Production Version
-Open `index.html` directly in your browser (API key will need to be set in config.js)
+### 🏦 MT5 Provider
+- **Real-time forex data** from MetaTrader 5
+- **WebSocket streaming** for live tick data
+- **Historical data API** with timezone conversion
+- **Fake data mode** for testing (when MT5 unavailable)
+
+### 🪙 CryptoCompare Provider  
+- **Cryptocurrency data** from CryptoCompare API
+- **Multiple exchanges** support
+- **Real-time streaming** via WebSocket
+- **Historical data** with period-based accuracy
+
+### 🎭 Fake Data Provider
+- **Simulated market data** for testing
+- **Realistic price movements** with trends and volatility
+- **Multiple forex pairs** support
+- **Configurable parameters** for different scenarios
 
 ## 📁 Project Structure
 
 ```
 chart-project/
 ├── src/
-│   ├── config.js          # Environment configuration
-│   ├── helpers.js         # API helpers and utilities
-│   ├── datafeed.js        # TradingView datafeed implementation
-│   ├── main.js           # Main application entry point
-│   └── streaming.js      # Real-time streaming functionality
-├── charting_library_cloned_data/  # TradingView library files
-├── index.html            # Production version
-├── index-dev.html        # Development version (with .env support)
-├── index2.html          # Demo version with UDF datafeed
-├── index-simple.html    # Simple version with mock data
-├── index-debug.html     # Debug version with logging
-├── load-env.js          # Environment variable loader
-├── env.example          # Environment variables template
-├── .gitignore           # Git ignore rules
-└── README.md           # This file
+│   ├── core/
+│   │   ├── config.js          # Secure configuration management
+│   │   └── main.js           # Application entry point
+│   ├── providers/
+│   │   ├── mt5/              # MT5 provider implementation
+│   │   │   ├── datafeed.js   # TradingView datafeed interface
+│   │   │   ├── streaming.js  # Real-time WebSocket handling
+│   │   │   ├── fakeDataProvider.js # Fake data generation
+│   │   │   ├── helpers.js    # Utility functions
+│   │   │   └── config.js     # Provider configuration
+│   │   ├── cryptocompare/    # CryptoCompare provider implementation
+│   │   │   ├── datafeed.js   # TradingView datafeed interface
+│   │   │   ├── streaming.js  # Real-time WebSocket handling
+│   │   │   ├── helpers.js    # Utility functions
+│   │   │   └── config.js     # Provider configuration
+│   │   └── index.js          # Provider factory and selector
+│   └── charting_library_cloned_data/  # TradingView library files
+├── server.js                 # Node.js server with .env support
+├── index.html               # Main application
+├── env.example              # Environment variables template
+├── PROVIDERS.md             # Detailed provider documentation
+└── README.md               # This file
 ```
 
 ## 🔧 Configuration
 
-### Environment Variables
+### Provider Selection
+Change the active provider in your `.env` file:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CRYPTOCOMPARE_API_KEY` | Your CryptoCompare API key | Required |
-| `TRADINGVIEW_DEFAULT_SYMBOL` | Default symbol to display | `Bitfinex:BTC/USDT` |
-| `TRADINGVIEW_DEFAULT_INTERVAL` | Default time interval | `1D` |
-| `DEBUG_MODE` | Enable debug logging | `false` |
+```env
+# For MT5 provider
+PROVIDER=mt5
 
-### Supported Symbols
+# For CryptoCompare provider
+PROVIDER=cryptocompare
+```
 
-The datafeed supports symbols from these exchanges:
-- Bitfinex
-- Kraken
+### API Keys
+- **MT5**: Bearer token from your MT5 server
+- **CryptoCompare**: API key from [CryptoCompare](https://min-api.cryptocompare.com/)
 
-Format: `Exchange:Symbol/Base` (e.g., `Bitfinex:BTC/USDT`)
+### Fake Data Mode
+Enable fake data for testing when real providers are unavailable:
 
-### Supported Resolutions
+```env
+MT5_FAKE_DATA=1  # Set to 1 to enable fake data
+```
 
-- Daily: `1D`
-- Weekly: `1W` 
-- Monthly: `1M`
+## 📖 Detailed Documentation
 
-## 🔒 Security
+For comprehensive information about each provider, configuration options, and advanced features, see:
 
-- **Never commit your `.env` file** to version control
-- The `.gitignore` file is configured to exclude sensitive files
-- Use `env.example` as a template for other developers
+**👉 [PROVIDERS.md](./PROVIDERS.md)** - Complete provider documentation including:
+- Provider-specific configurations
+- API endpoints and authentication
+- Fake data mode setup
+- Troubleshooting guides
+- Usage examples
 
-## 🛠️ Development
+## 🔒 Security Features
 
-### Adding New Symbols
+- ✅ **Environment-based configuration** - No hardcoded secrets
+- ✅ **Server-side validation** before serving config
+- ✅ **Fallback configuration** if server fails
+- ✅ **`.env` file ignored** by version control
+- ✅ **Secure API key handling**
 
-1. Update the `getAllSymbols()` function in `src/datafeed.js`
-2. Add the new exchange/symbol to the configuration
+## 🛠️ Development & Contributing
 
-### Customizing the Chart
+### Contributing Guidelines
 
-Modify the TradingView widget configuration in `src/main.js`:
+This project welcomes contributions! Here's how you can help:
 
-```javascript
-window.tvWidget = new TradingView.widget({
-    symbol: TRADINGVIEW_DEFAULT_SYMBOL,
-    interval: TRADINGVIEW_DEFAULT_INTERVAL,
-    // ... other options
-});
+1. **Fork the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Make your changes**
+4. **Test thoroughly**
+5. **Submit a pull request**
+
+### Areas for Contribution
+
+- 🔧 **New Providers**: Add support for additional data sources
+- 🐛 **Bug Fixes**: Report and fix issues
+- 📚 **Documentation**: Improve guides and examples
+- 🎨 **UI/UX**: Enhance chart customization options
+- ⚡ **Performance**: Optimize data handling and caching
+- 🧪 **Testing**: Add unit tests and integration tests
+
+### Development Setup
+
+```bash
+# Clone your fork
+git clone https://github.com/your-username/tradingview-multi-provider-datafeed.git
+
+# Install dependencies
+npm install
+
+# Start development server
+node server.js
+
+# Make changes and test
+# Submit pull request when ready
 ```
 
 ## 📊 Features
 
-- ✅ Custom CryptoCompare datafeed
-- ✅ Real-time data streaming
-- ✅ Multiple time resolutions
-- ✅ Symbol search functionality
-- ✅ Environment variable configuration
-- ✅ Debug mode with logging
-- ✅ Multiple deployment options
+### Core Features
+- ✅ **Multi-provider architecture** - Switch between MT5, CryptoCompare, and Fake Data
+- ✅ **Real-time streaming** - Live tick data via WebSocket
+- ✅ **Historical data** - Accurate server data with period-based requests
+- ✅ **Secure configuration** - Environment-based setup
+- ✅ **Fake data mode** - Testing without real data sources
+- ✅ **Timezone handling** - Proper UTC conversion
+- ✅ **Error handling** - Robust error management and fallbacks
+
+### TradingView Integration
+- ✅ **Full TradingView compatibility** - Uses official Charting Library
+- ✅ **Symbol search** - Dynamic symbol discovery
+- ✅ **Multiple timeframes** - 1m, 5m, 15m, 30m, 1h, 4h, 1D, 1W, 1M
+- ✅ **Real-time updates** - Live chart updates
+- ✅ **Chart customization** - Themes, indicators, and settings
 
 ## 🐛 Troubleshooting
 
-### Chart Not Loading
-1. Check browser console for errors
-2. Verify your API key is correctly set
-3. Ensure you're using a local server (not file:// protocol)
+### Common Issues
 
-### API Rate Limits
-- Free CryptoCompare accounts have rate limits
-- Consider upgrading for higher limits
-- The datafeed includes error handling for rate limits
+**Chart Not Loading**
+- Check browser console for errors
+- Verify API keys in `.env` file
+- Ensure server is running on correct port
 
-### Environment Variables Not Loading
-1. Ensure `.env` file exists in project root
-2. Check file permissions
-3. Use `index-dev.html` for development
+**Provider Not Working**
+- Verify `PROVIDER` setting in `.env`
+- Check API key authentication
+- Review server console for connection errors
+
+**Fake Data Not Working**
+- Ensure `MT5_FAKE_DATA=1` in `.env`
+- Restart server after configuration changes
+- Check browser console for initialization messages
+
+For detailed troubleshooting, see [PROVIDERS.md](./PROVIDERS.md).
 
 ## 📝 License
 
-This project is for educational purposes. Please respect TradingView's and CryptoCompare's terms of service.
-"# chart-project" 
+This project is for **educational and learning purposes**. Please respect the terms of service of:
+- [TradingView](https://www.tradingview.com/)
+- [CryptoCompare](https://min-api.cryptocompare.com/)
+- [MetaTrader 5](https://www.metatrader5.com/)
+
+## 👨‍💻 Author
+
+**Muhammad Arshad Shaheen**
+
+- 🌐 **GitHub**: [@arshadshaheen](https://github.com/arshadshaheen)
+- 💼 **LinkedIn**: [arshadshaheen](https://www.linkedin.com/in/arshadshaheen/)
+- 📧 **Twitter**: [@arshad_shaheen](https://twitter.com/arshad_shaheen)
+
+---
+
+## 🤝 Support
+
+If you find this project helpful, please:
+- ⭐ **Star the repository**
+- 🍴 **Fork for your own projects**
+- 🐛 **Report issues** you encounter
+- 💡 **Suggest improvements**
+- 📢 **Share with other developers**
+
+**Happy coding! 🚀**
