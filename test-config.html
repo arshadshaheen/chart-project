@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Configuration</title>
+</head>
+<body>
+    <h1>Configuration Test</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        import { config, getCurrentProvider, getCurrentProviderConfig, validateConfig } from './src/core/config.js';
+        
+        console.log('🔧 Configuration loaded:');
+        console.log('Current Provider:', getCurrentProvider());
+        console.log('Provider Config:', getCurrentProviderConfig());
+        console.log('TRADINGVIEW_DEFAULT_SYMBOL:', config.TRADINGVIEW_DEFAULT_SYMBOL);
+        console.log('TRADINGVIEW_DEFAULT_INTERVAL:', config.TRADINGVIEW_DEFAULT_INTERVAL);
+        console.log('DEBUG_MODE:', config.DEBUG_MODE);
+        
+        validateConfig();
+        
+        document.getElementById('output').innerHTML = `
+            <h2>Configuration Test Results:</h2>
+            <p><strong>Provider:</strong> ${getCurrentProvider()}</p>
+            <p><strong>Symbol:</strong> ${config.TRADINGVIEW_DEFAULT_SYMBOL}</p>
+            <p><strong>Interval:</strong> ${config.TRADINGVIEW_DEFAULT_INTERVAL}</p>
+            <p><strong>API Key:</strong> ${getCurrentProviderConfig().apiKey ? 'Configured' : 'Missing'}</p>
+            <p><strong>Base URL:</strong> ${getCurrentProviderConfig().baseUrl}</p>
+        `;
+    </script>
+</body>
+</html>

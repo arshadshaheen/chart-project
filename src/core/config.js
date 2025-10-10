@@ -1,81 +1,112 @@
 // Core configuration for the TradingView chart project
-// This file handles loading environment variables and provider configuration
+// Configuration is now loaded securely from server via /api/config endpoint
 
-// Default configuration values
-const DEFAULT_CONFIG = {
-    // Provider configuration
-    PROVIDER: 'cryptocompare', // Default provider
+// Default fallback configuration (used if server config fails)
+const FALLBACK_CONFIG = {
+    PROVIDER: 'mt5',
+    PROVIDER_API_KEY: '',
+    TRADINGVIEW_DEFAULT_SYMBOL: 'EURUSD.s',
+    TRADINGVIEW_DEFAULT_INTERVAL: '1',
+    DEBUG_MODE: 'true',
     PROVIDER_CONFIG: {
         cryptocompare: {
             apiKey: '',
             baseUrl: 'https://min-api.cryptocompare.com/',
-            wsUrl: 'wss://streamer.cryptocompare.com/v2'
+            wsUrl: 'wss://streamer.cryptocompare.com/v2',
+            defaultSymbol: 'Bitfinex:BTC/USDT',
+            defaultInterval: '1D'
         },
         mt5: {
             apiKey: '',
-            baseUrl: '', // Will be set when MT5 is implemented
-            wsUrl: '' // Will be set when MT5 is implemented
+            baseUrl: 'http://localhost:3000',
+            wsUrl: 'wss://live-mt5-sockets-staging.naqdi.com',
+            defaultSymbol: 'EURUSD.s',
+            defaultInterval: '1',
+            isFakeData: 0
         }
-    },
-    
-    // TradingView configuration
-    TRADINGVIEW_DEFAULT_SYMBOL: 'Bitfinex:BTC/USDT',
-    TRADINGVIEW_DEFAULT_INTERVAL: '1D',
-    DEBUG_MODE: 'true'
+    }
 };
 
-// Function to load environment variables
-function loadEnvironmentConfig() {
-    const config = { ...DEFAULT_CONFIG };
-    
-    // Try to load from window.env (set by a build process or script)
-    if (typeof window !== 'undefined' && window.env) {
-        Object.assign(config, window.env);
-    }
-    
-    // Try to load from process.env (if available in build environment)
-    if (typeof process !== 'undefined' && process.env) {
-        Object.assign(config, process.env);
-    }
-    
-    // For development, you can also check for a local config
-    if (typeof window !== 'undefined' && window.localConfig) {
-        Object.assign(config, window.localConfig);
-    }
-    
-    // Check if provider is configured
-    const currentProvider = config.PROVIDER;
-    const providerConfig = config.PROVIDER_CONFIG[currentProvider];
-    
-    if (providerConfig && providerConfig.apiKey && providerConfig.apiKey !== '') {
-        console.log(`✅ [config]: ${currentProvider} provider configured`);
-    } else {
-        console.log(`⚠️ [config]: No API key configured for ${currentProvider} provider`);
-        console.log('📝 [config]: To add an API key:');
-        if (currentProvider === 'cryptocompare') {
-            console.log('   1. Get a free key from: https://min-api.cryptocompare.com/');
-            console.log('   2. Add it to PROVIDER_CONFIG.cryptocompare.apiKey in your HTML');
-        } else {
-            console.log(`   1. Configure API key for ${currentProvider} provider`);
-            console.log(`   2. Add it to PROVIDER_CONFIG.${currentProvider}.apiKey in your HTML`);
+// Global config object - will be populated by loadConfig()
+let config = { ...FALLBACK_CONFIG };
+let configLoaded = false;
+let configLoadPromise = null;
+
+/**
+ * Load configuration from server endpoint
+ * @returns {Promise<Object>} Configuration object
+ */
+async function loadConfigFromServer() {
+    try {
+        console.log('🔄 [Config] Loading configuration from server...');
+        
+        const response = await fetch('/api/config');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
+        const serverConfig = await response.json();
+        console.log('✅ [Config] Configuration loaded from server:', serverConfig);
+        
+        // Merge server config with fallback config
+        config = {
+            ...FALLBACK_CONFIG,
+            ...serverConfig,
+            PROVIDER_CONFIG: {
+                ...FALLBACK_CONFIG.PROVIDER_CONFIG,
+                ...serverConfig.PROVIDER_CONFIG
+            }
+        };
+        
+        configLoaded = true;
+        return config;
+        
+    } catch (error) {
+        console.warn('⚠️ [Config] Failed to load configuration from server:', error);
+        console.warn('⚠️ [Config] Using fallback configuration');
+        
+        config = { ...FALLBACK_CONFIG };
+        configLoaded = true;
+        return config;
+    }
+}
+
+/**
+ * Get configuration (loads from server if not already loaded)
+ * @returns {Promise<Object>} Configuration object
+ */
+export async function getConfig() {
+    if (configLoaded) {
+        return config;
     }
     
+    if (configLoadPromise) {
+        return configLoadPromise;
+    }
+    
+    configLoadPromise = loadConfigFromServer();
+    return configLoadPromise;
+}
+
+/**
+ * Synchronous config getter (returns current config, may be fallback)
+ * @returns {Object} Configuration object
+ */
+export function getConfigSync() {
     return config;
 }
 
-// Load the configuration
-export const config = loadEnvironmentConfig();
+/**
+ * Check if config has been loaded from server
+ * @returns {boolean} True if config loaded from server
+ */
+export function isConfigLoaded() {
+    return configLoaded;
+}
 
 // Validation function
 export function validateConfig() {
     const errors = [];
-    
-    // Check if config is loaded
-    if (!config) {
-        console.warn('⚠️ [validateConfig]: Config not yet loaded');
-        return false;
-    }
     
     // Validate provider configuration
     const currentProvider = config.PROVIDER;
@@ -100,7 +131,7 @@ export function validateConfig() {
     if (errors.length > 0) {
         console.warn('⚠️ [validateConfig]: Configuration validation errors:', errors);
         console.warn('📝 [validateConfig]: Chart will work but with limitations');
-        console.warn('📝 [validateConfig]: To fix: Configure provider settings in your HTML');
+        console.warn('📝 [validateConfig]: To fix: Update environment variables in .env file');
     } else {
         console.log('✅ [validateConfig]: Configuration is valid');
     }
@@ -108,30 +139,22 @@ export function validateConfig() {
     return errors.length === 0;
 }
 
-// Export individual config values for convenience
-export const {
-    PROVIDER,
-    PROVIDER_CONFIG,
-    TRADINGVIEW_DEFAULT_SYMBOL,
-    TRADINGVIEW_DEFAULT_INTERVAL,
-    DEBUG_MODE
-} = config;
-
-// Backward compatibility exports
-export const CRYPTOCOMPARE_API_KEY = config.PROVIDER_CONFIG?.cryptocompare?.apiKey || '';
-
 // Helper functions
 export function getCurrentProvider() {
-    return PROVIDER;
+    return config.PROVIDER;
 }
 
 export function getCurrentProviderConfig() {
-    return PROVIDER_CONFIG[PROVIDER] || {};
+    return config.PROVIDER_CONFIG[config.PROVIDER] || {};
 }
 
 export function getProviderConfig(providerName) {
-    return PROVIDER_CONFIG[providerName] || {};
+    return config.PROVIDER_CONFIG[providerName] || {};
 }
 
-// Export the config object
+// Backward compatibility exports
+export const CRYPTOCOMPARE_API_KEY = () => config.PROVIDER_CONFIG?.cryptocompare?.apiKey || '';
+
+// Export the config object (for backward compatibility)
+export { config };
 export default config;
