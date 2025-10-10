@@ -100,31 +100,23 @@ function processApiResponse(data, normalizedFrom, normalizedTo, symbolInfo, firs
         // MT5 format: [timestamp, open, high, low, close]
         const [timestamp, open, high, low, close] = candle;
         
-        // Subtract 3 hours from server timestamp to convert back to UTC
-        // MT5 server (Windows UTC OS + GMT+3 settings) sends data with +3 hours from UTC
-        const SERVER_TIMEZONE_OFFSET = 3 * 60 * 60; // 3 hours in seconds
-        const utcTimestamp = timestamp - SERVER_TIMEZONE_OFFSET;
-        const timeInMs = utcTimestamp * 1000;
+        // Server now sends proper UTC timestamps - no conversion needed
+        const timeInMs = timestamp * 1000;
         
-        // Debug first few bars to see timestamp conversion
+        // Debug first few bars
         if (index < 3 || index >= data.result.answer.length - 3) {
             const currentTime = Math.floor(Date.now() / 1000);
             const timeDifference = Math.floor(timeInMs / 1000) - currentTime;
             
-            console.log(`[MT5 Datafeed]: Bar ${index} timestamp conversion:`, {
-                originalServerTimestamp: timestamp,
-                serverDate: new Date(timestamp * 1000).toISOString(),
-                utcTimestamp: utcTimestamp,
-                utcDate: new Date(timeInMs).toISOString(),
-                serverOffset: SERVER_TIMEZONE_OFFSET,
-                serverOffsetHours: SERVER_TIMEZONE_OFFSET / 3600,
+            console.log(`[MT5 Datafeed]: Bar ${index} timestamp:`, {
+                timestamp: timestamp,
+                date: new Date(timeInMs).toISOString(),
                 currentTimeSeconds: currentTime,
                 currentTimeDate: new Date(currentTime * 1000).toISOString(),
                 timeDifferenceSeconds: timeDifference,
                 timeDifferenceMinutes: Math.round(timeDifference / 60),
                 isPast: timeDifference < 0 ? 'YES' : 'NO',
-                isLastBar: index >= data.result.answer.length - 3 ? 'YES - compare with first tick' : 'NO',
-                note: 'Server timestamp converted from +3hrs to UTC (Windows UTC OS + GMT+3 settings)'
+                isLastBar: index >= data.result.answer.length - 3 ? 'YES - compare with first tick' : 'NO'
             });
         }
         
@@ -336,11 +328,9 @@ const Datafeed = {
             // Map TradingView resolution to MT5 timeframe
             const timeframe = mapResolutionToTimeframe(resolution);
             
-            // Add 3 hours to timestamps to match MT5 server timezone
-            // MT5 server runs on Windows UTC OS but configured with GMT+3 settings
-            const SERVER_TIMEZONE_OFFSET = 3 * 60 * 60; // 3 hours in seconds
-            const fromTimestamp = Math.floor(normalizedFrom + SERVER_TIMEZONE_OFFSET);
-            const toTimestamp = Math.floor(normalizedTo + SERVER_TIMEZONE_OFFSET);
+            // Server now expects UTC timestamps - no conversion needed
+            const fromTimestamp = Math.floor(normalizedFrom);
+            const toTimestamp = Math.floor(normalizedTo);
 
             console.log('[MT5 Datafeed]: Requesting data for:', { 
                 symbol, 
@@ -351,8 +341,6 @@ const Datafeed = {
                 originalTo: to,
                 normalizedFrom: normalizedFrom,
                 normalizedTo: normalizedTo,
-                serverOffset: SERVER_TIMEZONE_OFFSET,
-                serverOffsetHours: SERVER_TIMEZONE_OFFSET / 3600,
                 parsedSymbol: parsedSymbol,
                 cacheKey: cacheKey
             });

@@ -148,15 +148,11 @@ async function requestHistoryForPeriod(symbol, resolution, fromTime, toTime, sub
             note: 'Replacing inaccurate tick-built candle with server data'
         });
         
-        // Add 3 hours to match server timezone
-        const SERVER_TIMEZONE_OFFSET = 3 * 60 * 60; // 3 hours in seconds
-        const fromTimestamp = fromTime + SERVER_TIMEZONE_OFFSET;
-        const toTimestamp = toTime + SERVER_TIMEZONE_OFFSET;
-        
+        // Server now expects UTC timestamps - no conversion needed
         const data = await makeApiRequest(`forex/m1-history`, {
             symbol: symbol,
-            from: fromTimestamp,
-            to: toTimestamp,
+            from: fromTime,
+            to: toTime,
             data: 'dohlc'
         });
         
@@ -167,9 +163,8 @@ async function requestHistoryForPeriod(symbol, resolution, fromTime, toTime, sub
             const bars = data.result.answer.map(candle => {
                 const [timestamp, open, high, low, close] = candle;
                 
-                // Convert server timestamp back to UTC
-                const utcTimestamp = timestamp - SERVER_TIMEZONE_OFFSET;
-                const timeInMs = utcTimestamp * 1000;
+                // Server now sends UTC timestamps - no conversion needed
+                const timeInMs = timestamp * 1000;
                 
                 return {
                     time: timeInMs,
@@ -269,13 +264,8 @@ async function handleMt5TickData(tick) {
 
   const mid = (Ask + Bid) / 2;
   
-  // Apply timezone conversion
+  // Server now sends UTC timestamps - no conversion needed
   let tsMs = typeof Datetime_Msc === 'number' ? Datetime_Msc : Datetime * 1000;
-  
-  // Subtract 3 hours from server timestamp to convert back to UTC
-  const SERVER_TIMEZONE_OFFSET = -3 * 60 * 60 * 1000; // -3 hours in milliseconds
-  tsMs = tsMs + SERVER_TIMEZONE_OFFSET;
-  
   const tsSeconds = Math.floor(tsMs / 1000);
   const barTime = calculateBarTime(tsSeconds, sub.resolution);
   const currentTime = Math.floor(Date.now() / 1000);

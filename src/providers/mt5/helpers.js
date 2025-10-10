@@ -9,12 +9,8 @@ function generateFakeApiResponse(path, params) {
     
     console.log('[MT5 makeApiRequest]: Generating fake API response for', path, params);
     
-    // Convert timestamps back to UTC for fake data generation
-    const SERVER_TIMEZONE_OFFSET = 3 * 60 * 60; // 3 hours in seconds
-    const fromUtc = params.from - SERVER_TIMEZONE_OFFSET;
-    const toUtc = params.to - SERVER_TIMEZONE_OFFSET;
-    
-    const fakeBars = generateFakeHistory(params.symbol, fromUtc, toUtc);
+    // Server now uses UTC timestamps - no conversion needed
+    const fakeBars = generateFakeHistory(params.symbol, params.from, params.to);
     
     // Return in MT5 API format
     return {
